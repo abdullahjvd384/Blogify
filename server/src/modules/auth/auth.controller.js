@@ -5,7 +5,9 @@ import { toCamel } from '../../utils/case.js';
 import { ok, created, noContent } from '../../utils/response.js';
 
 function publicUser(userDoc) {
-  const obj = typeof userDoc.toObject === 'function' ? userDoc.toObject() : userDoc;
+  const obj = typeof userDoc.toObject === 'function' ? userDoc.toObject() : { ...userDoc };
+  obj.id = obj._id?.toString();
+  delete obj._id;
   delete obj.password_hash;
   return toCamel(obj);
 }
