@@ -1,0 +1,39 @@
+{
+  "name": "@blogplatform/server",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "src/server.js",
+  "scripts": {
+    "dev": "node --watch --env-file=.env src/server.js",
+    "dev:worker": "node --watch --env-file=.env workers/index.js",
+    "start": "node src/server.js",
+    "start:worker": "node workers/index.js",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "lint": "eslint src workers"
+  },
+  "dependencies": {
+    "@blogplatform/shared": "*",
+    "bcrypt": "^5.1.1",
+    "bullmq": "^5.34.0",
+    "cookie-parser": "^1.4.7",
+    "cors": "^2.8.5",
+    "express": "^4.21.2",
+    "express-rate-limit": "^7.5.0",
+    "helmet": "^8.0.0",
+    "ioredis": "^5.4.2",
+    "jsonwebtoken": "^9.0.2",
+    "mongoose": "^8.9.5",
+    "pino": "^9.5.0",
+    "pino-http": "^10.3.0",
+    "pino-pretty": "^13.0.0",
+    "rate-limit-redis": "^4.2.0",
+    "zod": "^3.24.1"
+  },
+  "devDependencies": {
+    "mongodb-memory-server": "^10.1.4",
+    "supertest": "^7.0.0",
+    "vitest": "^2.1.8"
+  }
+}

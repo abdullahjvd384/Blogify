@@ -1,0 +1,41 @@
+# Deps
+node_modules/
+.pnpm-store/
+
+# Build artefacts
+dist/
+build/
+.vite/
+coverage/
+
+# Env
+.env
+.env.local
+.env.*.local
+!.env.example
+
+# Logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+
+# Editor
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+.idea/
+*.swp
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Test
+.nyc_output/
+playwright-report/
+test-results/
+
+# Misc
+.cache/
+.tmp/
+*.pid
