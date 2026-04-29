@@ -1,16 +1,10 @@
 import { COOKIE_NAMES } from '@blogplatform/shared';
 import * as authService from './auth.service.js';
 import { setAuthCookies, clearAuthCookies } from './auth.cookies.js';
-import { toCamel } from '../../utils/case.js';
+import { present } from '../../utils/presenter.js';
 import { ok, created, noContent } from '../../utils/response.js';
 
-function publicUser(userDoc) {
-  const obj = typeof userDoc.toObject === 'function' ? userDoc.toObject() : { ...userDoc };
-  obj.id = obj._id?.toString();
-  delete obj._id;
-  delete obj.password_hash;
-  return toCamel(obj);
-}
+const publicUser = (doc) => present(doc, { omit: ['password_hash'] });
 
 function requestCtx(req) {
   return { ip: req.ip, userAgent: req.headers['user-agent'] };
