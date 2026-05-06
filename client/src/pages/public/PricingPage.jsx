@@ -1,14 +1,33 @@
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { toast } from 'sonner';
 import { usePlans, useMySubscription } from '@/features/subscription/hooks';
+import { useCheckout } from '@/features/payments/hooks';
+import { submitToGateway } from '@/features/payments/submitForm';
 import { useAuthStore } from '@/stores/authStore';
 import { Button } from '@/components/ui/Button';
+import { readApiError } from '@/lib/apiError';
 import { cn } from '@/lib/cn';
 
 export default function PricingPage() {
   const user = useAuthStore((s) => s.user);
+  const navigate = useNavigate();
   const { data: plans, isLoading } = usePlans();
   const { data: mySub } = useMySubscription();
+  const checkout = useCheckout();
   const currentKey = mySub?.subscription?.plan;
+
+  async function onUpgrade(planKey) {
+    if (!user) {
+      navigate('/login', { state: { from: '/pricing' } });
+      return;
+    }
+    try {
+      const { formUrl, fields } = await checkout.mutateAsync(planKey);
+      submitToGateway(formUrl, fields);
+    } catch (err) {
+      toast.error(readApiError(err));
+    }
+  }
 
   return (
     <div className="mx-auto max-w-5xl px-6 py-12">
@@ -17,12 +36,17 @@ export default function PricingPage() {
         <p className="mt-2 text-sm text-slate-500">
           Pay once a month, read without thinking about it.
         </p>
+        <p className="mt-1 text-xs text-slate-400">
+          Sandbox mode — no real money will be charged.
+        </p>
       </div>
 
       <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {isLoading && <p className="text-sm text-slate-500">Loading…</p>}
         {plans?.map((plan) => {
           const isCurrent = currentKey === plan.key;
+          const isUpgradePending =
+            checkout.isPending && checkout.variables === plan.key;
           return (
             <div
               key={plan.key}
@@ -66,8 +90,12 @@ export default function PricingPage() {
                     Active
                   </Button>
                 ) : (
-                  <Button className="w-full" disabled title="Payments launching soon">
-                    Coming soon
+                  <Button
+                    className="w-full"
+                    onClick={() => onUpgrade(plan.key)}
+                    isLoading={isUpgradePending}
+                  >
+                    Upgrade
                   </Button>
                 )}
               </div>

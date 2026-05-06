@@ -3,6 +3,7 @@ import { Link, useParams } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { useArticle, useVote } from '@/features/articles/hooks';
+import { useReadTracker } from '@/features/reads/useReadTracker';
 import { useAuthStore } from '@/stores/authStore';
 import { VoteButtons } from '@/components/VoteButtons';
 import { PaywallModal } from '@/components/PaywallModal';
@@ -30,6 +31,14 @@ export default function ArticlePage() {
   useEffect(() => {
     if (article?.usage) qc.invalidateQueries({ queryKey: ['subscription', 'me'] });
   }, [article?.usage, qc]);
+
+  // Only track time-on-page for actual readers (not the author or admins).
+  const isAuthor = user && article?.author?.id === user.id;
+  const isAdmin = user?.role === 'admin';
+  const trackerEnabled = Boolean(
+    user && article?.id && article?.status === 'published' && !isAuthor && !isAdmin,
+  );
+  useReadTracker({ articleId: article?.id, enabled: trackerEnabled });
 
   if (isLoading) {
     return <p className="mx-auto max-w-3xl px-6 py-16 text-sm text-slate-500">Loading…</p>;

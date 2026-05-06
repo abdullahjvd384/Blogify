@@ -8,6 +8,7 @@ import HomePage from '@/pages/public/HomePage';
 import LoginPage from '@/pages/public/LoginPage';
 import SignupPage from '@/pages/public/SignupPage';
 import PricingPage from '@/pages/public/PricingPage';
+import PaymentReturnPage from '@/pages/public/PaymentReturnPage';
 import FeedPage from '@/pages/reader/FeedPage';
 import ArticlePage from '@/pages/reader/ArticlePage';
 import DraftsPage from '@/pages/writer/DraftsPage';
@@ -26,6 +27,7 @@ export const router = createBrowserRouter([
       { path: '/articles', element: <FeedPage /> },
       { path: '/articles/:slug', element: <ArticlePage /> },
       { path: '/pricing', element: <PricingPage /> },
+      { path: '/payments/return', element: <PaymentReturnPage /> },
       { path: '/login', element: <LoginPage /> },
       { path: '/signup', element: <SignupPage /> },
     ],
