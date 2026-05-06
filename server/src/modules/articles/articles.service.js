@@ -3,11 +3,17 @@ import { Article } from '../../models/Article.js';
 import { ArticleVersion } from '../../models/ArticleVersion.js';
 import { Vote } from '../../models/Vote.js';
 import { User } from '../../models/User.js';
+import { Subscription } from '../../models/Subscription.js';
 import { uniqueSlug } from '../../utils/slug.js';
+import { enqueueModeration } from '../../queues/moderation.js';
+import { consumeRead } from '../../services/quota.js';
+import { DEFAULT_PLAN } from '@blogplatform/shared';
+import { logger } from '../../config/logger.js';
 import {
   ConflictError,
   ForbiddenError,
   NotFoundError,
+  QuotaExceededError,
   ValidationError,
 } from '../../utils/errors.js';
 
@@ -114,7 +120,14 @@ export async function softDelete(articleId, actor) {
   await article.save();
 }
 
-/** Marks a draft as `submitted` for moderation. Worker pickup lands Day 4. */
+/**
+ * Marks a draft as `submitted` and enqueues a moderation job.
+ *
+ * The article is saved before enqueue so the worker (running in a separate
+ * process) can always find the row. If enqueue fails we log but don't fail
+ * the request — a separate sweeper can pick up `submitted` rows that have
+ * been stuck for too long.
+ */
 export async function submitForReview(articleId, actor) {
   const article = await Article.findById(articleId);
   if (!article || article.deleted_at) throw new NotFoundError('Article not found');
@@ -125,6 +138,13 @@ export async function submitForReview(articleId, actor) {
   if (!article.content?.trim()) throw new ValidationError('Article has no content');
   article.status = 'submitted';
   await article.save();
+
+  try {
+    await enqueueModeration(article._id);
+  } catch (err) {
+    logger.error({ err, articleId: article._id.toString() }, 'failed to enqueue moderation');
+  }
+
   return article.toObject();
 }
 
@@ -132,6 +152,14 @@ export async function submitForReview(articleId, actor) {
  * Public read by slug. Returns only published articles unless the caller is the
  * author or an admin. Includes author summary and (when actor is logged in)
  * the caller's current vote so the article page can render in one round trip.
+ *
+ * Charges the read against the caller's daily quota when:
+ *   - the caller is logged in,
+ *   - the article is published,
+ *   - the caller isn't the author and isn't an admin.
+ *
+ * On quota exhausted: throws QuotaExceededError with usage details, which the
+ * error middleware surfaces as a 402 the frontend uses to pop the paywall.
  */
 export async function getBySlug(slug, actor) {
   const article = await Article.findOne({ slug, deleted_at: null }).lean();
@@ -143,10 +171,32 @@ export async function getBySlug(slug, actor) {
     throw new NotFoundError('Article not found');
   }
 
+  let usage = null;
+  if (actor?.id && article.status === 'published' && !isOwner && !isAdmin) {
+    const [sub, user] = await Promise.all([
+      Subscription.findOne({ user_id: actor.id }, { plan: 1 }).lean(),
+      User.findById(actor.id, { timezone: 1 }).lean(),
+    ]);
+    const planKey = sub?.plan || DEFAULT_PLAN;
+    const tz = user?.timezone || 'Asia/Karachi';
+    const result = await consumeRead(actor.id, article._id.toString(), planKey, tz);
+    if (result.allowed === false) {
+      throw new QuotaExceededError('Daily read limit reached', {
+        plan: result.plan,
+        used: result.used,
+        limit: result.limit,
+        remaining: 0,
+        resetAt: result.resetAt,
+      });
+    }
+    usage = result;
+  }
+
   const enriched = await attachAuthors([article]);
   if (actor?.id && article.status === 'published') {
     enriched[0].my_vote = await readMyVote(actor.id, article._id);
   }
+  if (usage) enriched[0].usage = usage;
   return enriched[0];
 }
 

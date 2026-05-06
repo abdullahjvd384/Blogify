@@ -7,14 +7,14 @@ import prettier from 'eslint-config-prettier';
 export default [
   {
     ignores: [
-      'node_modules',
-      'dist',
-      'build',
-      'coverage',
-      '.vite',
-      'playwright-report',
-      'test-results',
-      'plans',
+      '**/node_modules/**',
+      '**/dist/**',
+      '**/build/**',
+      '**/coverage/**',
+      '**/.vite/**',
+      'playwright-report/**',
+      'test-results/**',
+      'plans/**',
     ],
   },
 

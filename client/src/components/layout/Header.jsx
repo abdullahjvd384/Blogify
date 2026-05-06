@@ -2,6 +2,7 @@ import { Link, NavLink, useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { useAuthStore } from '@/stores/authStore';
 import { useLogout } from '@/features/auth/hooks';
+import { useMySubscription } from '@/features/subscription/hooks';
 import { Button } from '@/components/ui/Button';
 import { cn } from '@/lib/cn';
 
@@ -17,6 +18,7 @@ export function Header() {
   const user = useAuthStore((s) => s.user);
   const logout = useLogout();
   const navigate = useNavigate();
+  const { data: sub } = useMySubscription();
 
   async function handleLogout() {
     try {
@@ -39,6 +41,9 @@ export function Header() {
           <NavLink to="/articles" className={linkClass}>
             Read
           </NavLink>
+          <NavLink to="/pricing" className={linkClass}>
+            Pricing
+          </NavLink>
           {user && (
             <NavLink to="/writer" className={linkClass}>
               Write
@@ -54,6 +59,17 @@ export function Header() {
         <div className="flex items-center gap-2">
           {user ? (
             <>
+              {sub?.usage && (
+                <Link
+                  to="/pricing"
+                  title={`Daily reads on ${sub.plan?.label || sub.usage.plan}`}
+                  className="hidden rounded-full border border-slate-200 px-2.5 py-0.5 text-xs text-slate-600 hover:border-brand-500 hover:text-brand-700 sm:inline-block dark:border-slate-700 dark:text-slate-300"
+                >
+                  {sub.usage.limit === null
+                    ? `${sub.plan?.label || 'Unlimited'} · ∞`
+                    : `${sub.usage.used}/${sub.usage.limit} today`}
+                </Link>
+              )}
               <span className="hidden text-xs text-slate-500 sm:inline">{user.email}</span>
               <Button variant="ghost" size="sm" onClick={handleLogout} isLoading={logout.isPending}>
                 Logout

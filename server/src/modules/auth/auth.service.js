@@ -1,6 +1,8 @@
 import bcrypt from 'bcrypt';
 import { User } from '../../models/User.js';
 import { RefreshToken } from '../../models/RefreshToken.js';
+import { Subscription } from '../../models/Subscription.js';
+import { DEFAULT_PLAN } from '@blogplatform/shared';
 import {
   ConflictError,
   NotFoundError,
@@ -36,6 +38,10 @@ export async function signup(input, ctx = {}) {
     role: 'reader',
     status: 'active',
   });
+
+  // Subscription is enforced as 1:1 — every user gets a free plan at signup so
+  // downstream code (quota middleware, subscriptions/me) can assume one exists.
+  await Subscription.create({ user_id: user._id, plan: DEFAULT_PLAN, status: 'active' });
 
   const tokens = await issueTokens(user, ctx);
   return { user, tokens };

@@ -14,7 +14,9 @@ import mongoose from 'mongoose';
 import { connectDb, disconnectDb } from '../server/src/config/db.js';
 import { User } from '../server/src/models/User.js';
 import { Article } from '../server/src/models/Article.js';
+import { Subscription } from '../server/src/models/Subscription.js';
 import { uniqueSlug } from '../server/src/utils/slug.js';
+import { DEFAULT_PLAN } from '../shared/src/index.js';
 
 const ADMIN = { email: 'admin@blog.local', password: 'admin123!', name: 'Admin', role: 'admin' };
 const WRITER = { email: 'writer@blog.local', password: 'writer123!', name: 'Demo Writer', role: 'writer' };
@@ -40,6 +42,7 @@ Avoid cache stampedes by using request coalescing or stale-while-revalidate. For
 
 async function ensureUser({ email, password, name, role }) {
   const existing = await User.findOne({ email });
+  let user = existing;
   if (existing) {
     if (existing.role !== role) {
       existing.role = role;
@@ -49,17 +52,22 @@ async function ensureUser({ email, password, name, role }) {
     } else {
       console.log(`  exists: ${email}`);
     }
-    return existing;
+  } else {
+    const password_hash = await bcrypt.hash(password, 12);
+    user = await User.create({
+      email,
+      password_hash,
+      name,
+      role,
+      email_verified_at: new Date(),
+    });
+    console.log(`  created: ${email} (${role})`);
   }
-  const password_hash = await bcrypt.hash(password, 12);
-  const user = await User.create({
-    email,
-    password_hash,
-    name,
-    role,
-    email_verified_at: new Date(),
-  });
-  console.log(`  created: ${email} (${role})`);
+  await Subscription.updateOne(
+    { user_id: user._id },
+    { $setOnInsert: { plan: DEFAULT_PLAN, status: 'active', started_at: new Date() } },
+    { upsert: true },
+  );
   return user;
 }
 
