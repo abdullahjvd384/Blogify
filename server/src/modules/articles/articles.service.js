@@ -1,6 +1,8 @@
 import mongoose from 'mongoose';
 import { Article } from '../../models/Article.js';
 import { ArticleVersion } from '../../models/ArticleVersion.js';
+import { Vote } from '../../models/Vote.js';
+import { User } from '../../models/User.js';
 import { uniqueSlug } from '../../utils/slug.js';
 import {
   ConflictError,
@@ -128,19 +130,24 @@ export async function submitForReview(articleId, actor) {
 
 /**
  * Public read by slug. Returns only published articles unless the caller is the
- * author or an admin.
+ * author or an admin. Includes author summary and (when actor is logged in)
+ * the caller's current vote so the article page can render in one round trip.
  */
 export async function getBySlug(slug, actor) {
   const article = await Article.findOne({ slug, deleted_at: null }).lean();
   if (!article) throw new NotFoundError('Article not found');
 
-  if (article.status === 'published') return article;
-
   const isOwner = actor?.id && article.author_id.toString() === actor.id;
   const isAdmin = actor?.role === 'admin';
-  if (isOwner || isAdmin) return article;
+  if (article.status !== 'published' && !isOwner && !isAdmin) {
+    throw new NotFoundError('Article not found');
+  }
 
-  throw new NotFoundError('Article not found');
+  const enriched = await attachAuthors([article]);
+  if (actor?.id && article.status === 'published') {
+    enriched[0].my_vote = await readMyVote(actor.id, article._id);
+  }
+  return enriched[0];
 }
 
 /** Public feed: published articles only, cursor-paginated by _id desc. */
@@ -153,11 +160,51 @@ export async function listFeed({ cursor, limit, tag, authorId }) {
   const docs = await Article.find(filter).sort({ _id: -1 }).limit(limit + 1).lean();
   const hasMore = docs.length > limit;
   const items = hasMore ? docs.slice(0, limit) : docs;
+  const enriched = await attachAuthors(items);
   return {
-    items,
-    cursor: items.length ? items[items.length - 1]._id.toString() : null,
+    items: enriched,
+    cursor: enriched.length ? enriched[enriched.length - 1]._id.toString() : null,
     hasMore,
   };
+}
+
+/**
+ * Adds an `author` summary ({ id, name, role }) to each article doc. Done in
+ * one query rather than $lookup so we can keep the read pipeline simple.
+ */
+async function attachAuthors(docs) {
+  if (!docs.length) return docs;
+  const ids = [...new Set(docs.map((d) => d.author_id.toString()))];
+  const users = await User.find({ _id: { $in: ids } }, { name: 1, role: 1 }).lean();
+  const byId = new Map(users.map((u) => [u._id.toString(), u]));
+  return docs.map((d) => {
+    const u = byId.get(d.author_id.toString());
+    return {
+      ...d,
+      author: u ? { id: u._id.toString(), name: u.name, role: u.role } : null,
+    };
+  });
+}
+
+async function readMyVote(userId, articleId) {
+  const v = await Vote.findOne(
+    { user_id: new mongoose.Types.ObjectId(userId), article_id: articleId },
+    { value: 1 },
+  ).lean();
+  return v ? v.value : 0;
+}
+
+/**
+ * Fetch one of the caller's own articles by id, regardless of status. Used by
+ * the editor to load any draft (the public `getBySlug` would 404 on non-published).
+ */
+export async function getMineById(authorId, articleId, actor) {
+  const article = await Article.findOne({ _id: articleId, deleted_at: null }).lean();
+  if (!article) throw new NotFoundError('Article not found');
+  const isOwner = article.author_id.toString() === authorId;
+  const isAdmin = actor?.role === 'admin';
+  if (!isOwner && !isAdmin) throw new ForbiddenError();
+  return article;
 }
 
 /** Author's own articles (any status). */

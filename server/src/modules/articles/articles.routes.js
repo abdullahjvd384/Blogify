@@ -11,6 +11,7 @@ import {
   minePagedQuerySchema,
 } from './articles.validators.js';
 import * as ctrl from './articles.controller.js';
+import { votesRouter } from '../votes/votes.routes.js';
 
 const router = Router();
 
@@ -21,6 +22,13 @@ router.get(
   authRequired,
   validate(minePagedQuerySchema, 'query'),
   asyncHandler(ctrl.listMine),
+);
+
+router.get(
+  '/mine/:id',
+  authRequired,
+  validate(articleIdParamSchema, 'params'),
+  asyncHandler(ctrl.getMineById),
 );
 
 router.get(
@@ -58,5 +66,7 @@ router.post(
   validate(articleIdParamSchema, 'params'),
   asyncHandler(ctrl.submit),
 );
+
+router.use('/:id/vote', votesRouter);
 
 export { router as articlesRouter };

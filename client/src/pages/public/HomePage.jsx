@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/Button';
 export default function HomePage() {
   const user = useAuthStore((s) => s.user);
   const feed = useArticleFeed({ limit: 3 });
+  const recent = (feed.data?.pages?.[0]?.data || []).slice(0, 3);
 
   return (
     <div>
@@ -41,7 +42,7 @@ export default function HomePage() {
         </div>
         <div className="mt-4 space-y-3">
           {feed.isLoading && <p className="text-sm text-slate-500">Loading…</p>}
-          {feed.data?.data?.map((article) => (
+          {recent.map((article) => (
             <ArticleCard key={article.id} article={article} />
           ))}
         </div>
