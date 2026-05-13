@@ -41,6 +41,16 @@ const paymentSchema = new mongoose.Schema(
     started_at: { type: Date, default: () => new Date() },
     completed_at: { type: Date, default: null },
     error: { type: String, default: null },
+    // Manual JazzCash flow: user submits their TID + sender phone; admin verifies
+    // the deposit on the receiving account and approves/rejects.
+    sender_phone: { type: String, default: null },
+    proof_note: { type: String, default: null },
+    verified_by_id: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      default: null,
+    },
+    verified_at: { type: Date, default: null },
   },
   {
     timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' },

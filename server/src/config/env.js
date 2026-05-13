@@ -25,6 +25,9 @@ const envSchema = z.object({
   JAZZCASH_PASSWORD: z.string().optional(),
   JAZZCASH_INTEGRITY_SALT: z.string().optional(),
   JAZZCASH_RETURN_URL: z.string().url().optional(),
+  // Manual-payment flow: the JazzCash mobile account users send money to.
+  JAZZCASH_RECEIVER_NUMBER: z.string().default('03364514852'),
+  JAZZCASH_RECEIVER_NAME: z.string().default('Blogify'),
 
   RESEND_API_KEY: z.string().optional(),
   EMAIL_FROM: z.string().default('Blog Platform <noreply@example.com>'),

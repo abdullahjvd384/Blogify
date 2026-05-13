@@ -240,11 +240,18 @@ export function Header() {
                     </Link>
                   )}
                   <Link
+                    to="/account/subscription"
+                    className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-800"
+                  >
+                    <CreditCard size={15} className="text-slate-400" />
+                    My subscription
+                  </Link>
+                  <Link
                     to="/pricing"
                     className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-800"
                   >
                     <CreditCard size={15} className="text-slate-400" />
-                    Plans & billing
+                    Plans & pricing
                   </Link>
                   {user.role === 'admin' && (
                     <>
@@ -261,6 +268,13 @@ export function Header() {
                       >
                         <Shield size={15} />
                         User management
+                      </Link>
+                      <Link
+                        to="/admin/payments"
+                        className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-amber-700 hover:bg-amber-50 dark:text-amber-300 dark:hover:bg-amber-950/50"
+                      >
+                        <Shield size={15} />
+                        Payment review
                       </Link>
                     </>
                   )}

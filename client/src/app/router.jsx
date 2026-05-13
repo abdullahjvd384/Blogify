@@ -19,6 +19,8 @@ import DraftsPage from '@/pages/writer/DraftsPage';
 import EditorPage from '@/pages/writer/EditorPage';
 import ModerationPage from '@/pages/admin/ModerationPage';
 import UsersPage from '@/pages/admin/UsersPage';
+import PaymentsPage from '@/pages/admin/PaymentsPage';
+import SubscriptionPage from '@/pages/account/SubscriptionPage';
 
 export const router = createBrowserRouter([
   {
@@ -56,6 +58,20 @@ export const router = createBrowserRouter([
       { path: '/writer/edit/:id', element: <EditorPage /> },
     ],
   },
+  // Authenticated-but-no-role routes (account settings, subscription, etc.)
+  {
+    element: (
+      <AuthGate>
+        <ProtectedRoute>
+          <AppLayout />
+        </ProtectedRoute>
+      </AuthGate>
+    ),
+    children: [
+      { path: '/account', element: <Navigate to="/account/subscription" replace /> },
+      { path: '/account/subscription', element: <SubscriptionPage /> },
+    ],
+  },
   {
     element: (
       <AuthGate>
@@ -68,6 +84,7 @@ export const router = createBrowserRouter([
       { path: '/admin', element: <Navigate to="/admin/moderation" replace /> },
       { path: '/admin/moderation', element: <ModerationPage /> },
       { path: '/admin/users', element: <UsersPage /> },
+      { path: '/admin/payments', element: <PaymentsPage /> },
     ],
   },
 ]);

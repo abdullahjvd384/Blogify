@@ -1,5 +1,5 @@
 import { NavLink, Outlet } from 'react-router-dom';
-import { Shield, Gavel, Users } from 'lucide-react';
+import { Shield, Gavel, Users, Wallet } from 'lucide-react';
 import { Header } from './Header';
 import { Footer } from './Footer';
 import { cn } from '@/lib/cn';
@@ -7,6 +7,7 @@ import { cn } from '@/lib/cn';
 const subItems = [
   { to: '/admin/moderation', label: 'Moderation', icon: Gavel },
   { to: '/admin/users', label: 'Users', icon: Users },
+  { to: '/admin/payments', label: 'Payments', icon: Wallet },
 ];
 
 const linkClass = ({ isActive }) =>

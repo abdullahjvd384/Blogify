@@ -1,6 +1,8 @@
+import mongoose from 'mongoose';
 import { PLANS, DEFAULT_PLAN } from '@blogplatform/shared';
 import { Payment } from '../../models/Payment.js';
 import { Subscription } from '../../models/Subscription.js';
+import { User } from '../../models/User.js';
 import {
   buildCheckoutForm,
   verifySecureHash,
@@ -173,6 +175,126 @@ function addDays(date, days) {
   const d = new Date(date);
   d.setUTCDate(d.getUTCDate() + days);
   return d;
+}
+
+/**
+ * Manual JazzCash flow: user paid the receiving account out-of-band and now
+ * submits their JazzCash Transaction ID + sender phone as proof. We record a
+ * `pending` Payment row; an admin reviews and approves/rejects from the
+ * admin dashboard.
+ *
+ * Idempotency: the same TID can't be submitted twice — unique index on
+ * txn_ref_no surfaces as ConflictError so the user can't double-claim.
+ */
+export async function submitManualPayment(userId, { planKey, txnRefNo, senderPhone, note }) {
+  const plan = PLANS[planKey];
+  if (!plan) throw new ValidationError(`Unknown plan: ${planKey}`);
+  if (planKey === DEFAULT_PLAN || plan.pricePaisa === 0) {
+    throw new ValidationError('That plan is not purchasable');
+  }
+
+  // Don't accept duplicate TIDs (whether the existing one belongs to this user
+  // or another). One TID = one claim.
+  const existing = await Payment.findOne({ txn_ref_no: txnRefNo }).lean();
+  if (existing) {
+    throw new ConflictError(
+      'This Transaction ID has already been submitted. If you believe this is in error, contact support.',
+    );
+  }
+
+  const payment = await Payment.create({
+    user_id: userId,
+    provider: 'jazzcash',
+    txn_ref_no: txnRefNo,
+    plan_key: planKey,
+    amount_paisa: plan.pricePaisa,
+    currency: 'PKR',
+    status: 'pending',
+    sender_phone: senderPhone,
+    proof_note: note || null,
+    raw_request: { source: 'manual_submit', planKey, senderPhone, note: note || null },
+  });
+
+  return payment.toObject();
+}
+
+/** List the current user's payment submissions, newest first. */
+export async function listMyPayments(userId, { limit }) {
+  const items = await Payment.find({ user_id: userId })
+    .sort({ created_at: -1 })
+    .limit(limit)
+    .lean();
+  return items;
+}
+
+/**
+ * Admin: list all payment submissions, optionally filtered by status. Enriches
+ * each row with author summary so the admin doesn't need to cross-reference
+ * user IDs.
+ */
+export async function adminListPayments({ status, limit }) {
+  const filter = {};
+  if (status) filter.status = status;
+
+  const items = await Payment.find(filter).sort({ created_at: -1 }).limit(limit).lean();
+  if (!items.length) return items;
+
+  const userIds = [...new Set(items.map((p) => p.user_id.toString()))];
+  const users = await User.find(
+    { _id: { $in: userIds } },
+    { name: 1, email: 1, role: 1 },
+  ).lean();
+  const byId = new Map(users.map((u) => [u._id.toString(), u]));
+
+  return items.map((p) => ({
+    ...p,
+    user: byId.get(p.user_id.toString()) || null,
+  }));
+}
+
+/**
+ * Admin approves a manually-submitted payment. Activates / extends the user's
+ * subscription for 30 days. Idempotent: re-running on an approved payment is
+ * a no-op (returns the existing record), not a double-extension.
+ */
+export async function adminApprovePayment(paymentId, admin) {
+  const payment = await Payment.findById(paymentId);
+  if (!payment) throw new NotFoundError('Payment not found');
+  if (payment.status === 'success') return payment.toObject(); // idempotent
+  if (payment.status === 'failed') {
+    throw new ConflictError('Payment was already rejected — cannot approve');
+  }
+  if (payment.status === 'refunded') {
+    throw new ConflictError('Payment was refunded');
+  }
+
+  payment.status = 'success';
+  payment.completed_at = new Date();
+  payment.verified_by_id = new mongoose.Types.ObjectId(admin.id);
+  payment.verified_at = new Date();
+  await payment.save();
+
+  await activateSubscription(payment);
+  return payment.toObject();
+}
+
+/** Admin rejects a payment submission with a reason (shown to the user). */
+export async function adminRejectPayment(paymentId, admin, { reason }) {
+  const payment = await Payment.findById(paymentId);
+  if (!payment) throw new NotFoundError('Payment not found');
+  if (payment.status === 'failed') return payment.toObject(); // idempotent
+  if (payment.status === 'success') {
+    throw new ConflictError('Payment was already approved — cannot reject');
+  }
+
+  payment.status = 'failed';
+  payment.error = reason;
+  payment.completed_at = new Date();
+  payment.verified_by_id = new mongoose.Types.ObjectId(admin.id);
+  payment.verified_at = new Date();
+  await payment.save();
+
+  return payment.toObject();
 }
 
 /**

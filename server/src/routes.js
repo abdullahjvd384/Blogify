@@ -6,7 +6,7 @@ import { moderationRouter } from './modules/moderation/moderation.routes.js';
 import { adminUsersRouter } from './modules/users/users.routes.js';
 import { subscriptionsRouter } from './modules/subscriptions/subscriptions.routes.js';
 import { readsRouter } from './modules/reads/reads.routes.js';
-import { paymentsRouter } from './modules/payments/payments.routes.js';
+import { paymentsRouter, adminPaymentsRouter } from './modules/payments/payments.routes.js';
 
 /** Mounts all v1 sub-routers. New modules add their router here. */
 export function buildRouter() {
@@ -19,5 +19,6 @@ export function buildRouter() {
   api.use('/payments', paymentsRouter);
   api.use('/admin/moderation', moderationRouter);
   api.use('/admin/users', adminUsersRouter);
+  api.use('/admin/payments', adminPaymentsRouter);
   return api;
 }

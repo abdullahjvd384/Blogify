@@ -12,9 +12,12 @@ const RESEND_API = 'https://api.resend.com/emails';
  */
 export async function sendEmail({ to, subject, html, text }) {
   if (!env.RESEND_API_KEY) {
+    // Pull the primary action link out of the HTML so devs can copy/paste it
+    // straight from the log without parsing the whole template.
+    const linkMatch = html.match(/href="(https?:\/\/[^"]+(?:verify-email|reset-password)[^"]*)"/i);
     logger.warn(
-      { to, subject, preview: html.slice(0, 200) },
-      'email-dev: RESEND_API_KEY not set, logging instead of sending',
+      { to, subject, link: linkMatch?.[1] || '(none found)' },
+      'email-dev: RESEND_API_KEY not set — copy the link below into your browser',
     );
     return { id: 'dev-' + Date.now() };
   }

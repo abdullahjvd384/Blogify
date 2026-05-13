@@ -1,5 +1,5 @@
+import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { toast } from 'sonner';
 import {
   Check,
   Sparkles,
@@ -12,9 +12,8 @@ import {
   Infinity as InfinityIcon,
 } from 'lucide-react';
 import { usePlans, useMySubscription } from '@/features/subscription/hooks';
-import { useCheckout } from '@/features/payments/hooks';
-import { submitToGateway } from '@/features/payments/submitForm';
 import { useAuthStore } from '@/stores/authStore';
+import { ManualUpgradeModal } from '@/components/ManualUpgradeModal';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import { Skeleton } from '@/components/ui/Skeleton';
@@ -68,20 +67,17 @@ export default function PricingPage() {
   const navigate = useNavigate();
   const { data: plans, isLoading } = usePlans();
   const { data: mySub } = useMySubscription();
-  const checkout = useCheckout();
   const currentKey = mySub?.subscription?.plan;
+  const [selectedPlan, setSelectedPlan] = useState(null);
 
-  async function onUpgrade(planKey) {
+  function onUpgrade(planKey) {
     if (!user) {
       navigate('/login', { state: { from: '/pricing' } });
       return;
     }
-    try {
-      const { formUrl, fields } = await checkout.mutateAsync(planKey);
-      submitToGateway(formUrl, fields);
-    } catch (err) {
-      toast.error(readApiError(err));
-    }
+    const plan = plans?.find((p) => p.key === planKey);
+    if (!plan || plan.pricePaisa === 0) return;
+    setSelectedPlan(plan);
   }
 
   const featuredKey = plans?.find((p) => p.key === 'pro')?.key || plans?.[1]?.key;
@@ -122,8 +118,7 @@ export default function PricingPage() {
 
           {plans?.map((plan) => {
             const isCurrent = currentKey === plan.key;
-            const isUpgradePending =
-              checkout.isPending && checkout.variables === plan.key;
+            const isUpgradePending = selectedPlan?.key === plan.key;
             const isFeatured = plan.key === featuredKey && !isCurrent;
             const style = PLAN_STYLES[plan.key] || PLAN_STYLES.free;
             const Icon = style.icon;
@@ -266,6 +261,13 @@ export default function PricingPage() {
           )}
         </div>
       </div>
+
+      <ManualUpgradeModal
+        open={!!selectedPlan}
+        plan={selectedPlan}
+        onClose={() => setSelectedPlan(null)}
+        onSubmitted={() => navigate('/account/subscription')}
+      />
     </div>
   );
 }

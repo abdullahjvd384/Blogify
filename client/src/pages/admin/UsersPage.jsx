@@ -21,8 +21,16 @@ import { useAuthStore } from '@/stores/authStore';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import { Skeleton } from '@/components/ui/Skeleton';
+import { ConfirmModal } from '@/components/ConfirmModal';
 import { readApiError } from '@/lib/apiError';
 import { cn } from '@/lib/cn';
+
+const BAN_REASONS = [
+  'Spam or repeated low-quality content',
+  'Abusive behavior toward other users',
+  'Plagiarism or copyright violation',
+  'Violating community guidelines',
+];
 
 const ROLE_FILTERS = [
   { value: '', label: 'All roles' },
@@ -69,6 +77,8 @@ export default function UsersPage() {
   const [qDraft, setQDraft] = useState('');
   const [role, setRole] = useState('');
   const [status, setStatus] = useState('');
+  // { user, kind: 'ban' | 'delete' } | null
+  const [confirmTarget, setConfirmTarget] = useState(null);
 
   const users = useAdminUsers({ q: q || undefined, role: role || undefined, status: status || undefined, limit: 30 });
   const stats = useAdminUserStats();
@@ -88,6 +98,17 @@ export default function UsersPage() {
     } catch (err) {
       toast.error(readApiError(err));
     }
+  }
+
+  async function onConfirmModal(value) {
+    if (!confirmTarget) return;
+    const { user, kind } = confirmTarget;
+    if (kind === 'ban') {
+      await patch(user.id, { status: 'banned', bannedReason: value || '' }, 'User banned');
+    } else if (kind === 'delete') {
+      await patch(user.id, { status: 'deleted' }, 'User deleted');
+    }
+    setConfirmTarget(null);
   }
 
   const statCards = useMemo(() => {
@@ -263,10 +284,7 @@ export default function UsersPage() {
                                   size="xs"
                                   variant="danger"
                                   leftIcon={<Ban />}
-                                  onClick={() => {
-                                    const reason = window.prompt('Reason for ban (optional):') || '';
-                                    patch(u.id, { status: 'banned', bannedReason: reason }, 'User banned');
-                                  }}
+                                  onClick={() => setConfirmTarget({ user: u, kind: 'ban' })}
                                 >
                                   Ban
                                 </Button>
@@ -286,11 +304,7 @@ export default function UsersPage() {
                                   size="xs"
                                   variant="ghost"
                                   leftIcon={<Trash2 />}
-                                  onClick={() => {
-                                    if (window.confirm('Soft-delete this user? They will be marked deleted but the row stays.')) {
-                                      patch(u.id, { status: 'deleted' }, 'User deleted');
-                                    }
-                                  }}
+                                  onClick={() => setConfirmTarget({ user: u, kind: 'delete' })}
                                 >
                                   Delete
                                 </Button>
@@ -307,6 +321,47 @@ export default function UsersPage() {
           </div>
         )}
       </div>
+
+      <ConfirmModal
+        open={confirmTarget?.kind === 'ban'}
+        title="Ban user"
+        description={
+          confirmTarget?.user
+            ? `${confirmTarget.user.name} (${confirmTarget.user.email}) will lose write access immediately. The reason below is recorded for admin reference.`
+            : ''
+        }
+        icon={Ban}
+        tone="danger"
+        input={{
+          label: 'Reason',
+          placeholder: 'Spam, abuse, plagiarism…',
+          required: false,
+          maxLength: 280,
+        }}
+        presets={BAN_REASONS}
+        confirmLabel="Ban user"
+        confirmVariant="danger"
+        isSubmitting={updateMut.isPending}
+        onClose={() => setConfirmTarget(null)}
+        onConfirm={onConfirmModal}
+      />
+
+      <ConfirmModal
+        open={confirmTarget?.kind === 'delete'}
+        title="Delete user"
+        description={
+          confirmTarget?.user
+            ? `Soft-delete ${confirmTarget.user.name}? The row stays in the database but the account is marked deleted. You can reactivate later.`
+            : ''
+        }
+        icon={Trash2}
+        tone="warning"
+        confirmLabel="Delete user"
+        confirmVariant="danger"
+        isSubmitting={updateMut.isPending}
+        onClose={() => setConfirmTarget(null)}
+        onConfirm={onConfirmModal}
+      />
     </div>
   );
 }
