@@ -4,10 +4,30 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="theme-color" content="#2563eb" />
-    <title>Blog Platform</title>
+    <meta name="theme-color" content="#4f46e5" />
+    <meta
+      name="description"
+      content="Blogify — A no-noise blog platform with AI-moderated submissions and quotas that respect your attention."
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <title>Blogify · Write what's worth reading</title>
+    <script>
+      // Pre-paint theme to avoid flash of unstyled mode
+      (function () {
+        try {
+          var t = localStorage.getItem('theme');
+          if (
+            t === 'dark' ||
+            (!t && window.matchMedia('(prefers-color-scheme: dark)').matches)
+          ) {
+            document.documentElement.classList.add('dark');
+          }
+        } catch (e) {}
+      })();
+    </script>
   </head>
-  <body class="bg-white text-slate-900 dark:bg-slate-950 dark:text-slate-50">
+  <body class="bg-white text-slate-900 antialiased selection:bg-brand-200 selection:text-brand-900 dark:bg-slate-950 dark:text-slate-50">
     <div id="root"></div>
     <script type="module" src="/src/app/main.jsx"></script>
   </body>

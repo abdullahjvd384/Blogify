@@ -1,30 +1,47 @@
 import { useEffect } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
+import {
+  CheckCircle2,
+  XCircle,
+  RotateCcw,
+  Loader2,
+  ArrowRight,
+  ArrowLeft,
+} from 'lucide-react';
 import { usePaymentStatus } from '@/features/payments/hooks';
 import { Button } from '@/components/ui/Button';
 import { useAuthStore } from '@/stores/authStore';
+import { cn } from '@/lib/cn';
 
-const STATUS_COPY = {
+const STATUS = {
   success: {
     title: 'Payment confirmed',
     body: 'Your subscription is active. Happy reading.',
-    accent: 'text-emerald-700 dark:text-emerald-300',
+    Icon: CheckCircle2,
+    accent: 'from-emerald-500 to-teal-500',
+    ring: 'ring-emerald-200 dark:ring-emerald-900/60',
   },
   failed: {
     title: 'Payment failed',
     body: 'No charge was made. You can try again anytime.',
-    accent: 'text-red-700 dark:text-red-300',
+    Icon: XCircle,
+    accent: 'from-rose-500 to-red-500',
+    ring: 'ring-rose-200 dark:ring-rose-900/60',
   },
   refunded: {
     title: 'Payment refunded',
     body: 'This transaction was refunded.',
-    accent: 'text-slate-700 dark:text-slate-200',
+    Icon: RotateCcw,
+    accent: 'from-slate-500 to-slate-700',
+    ring: 'ring-slate-200 dark:ring-slate-800',
   },
   pending: {
     title: 'Confirming your payment…',
     body: 'Hang tight — this usually takes a few seconds.',
-    accent: 'text-slate-700 dark:text-slate-200',
+    Icon: Loader2,
+    accent: 'from-amber-500 to-orange-500',
+    ring: 'ring-amber-200 dark:ring-amber-900/60',
   },
 };
 
@@ -39,8 +56,6 @@ export default function PaymentReturnPage() {
 
   const { data, isError } = usePaymentStatus(user && txnRefNo ? txnRefNo : null);
 
-  // Once the payment is final, refresh subscription state so the chip + pricing
-  // page show the new plan immediately.
   useEffect(() => {
     if (data?.status === 'success') {
       qc.invalidateQueries({ queryKey: ['subscription'] });
@@ -49,66 +64,100 @@ export default function PaymentReturnPage() {
 
   if (!txnRefNo) {
     return (
-      <div className="mx-auto max-w-md py-20 text-center">
-        <h1 className="text-xl font-semibold">No transaction reference</h1>
-        <p className="mt-2 text-sm text-slate-500">
+      <div className="mx-auto flex max-w-md flex-col items-center px-6 py-20 text-center">
+        <h1 className="font-display text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-50">
+          No transaction reference
+        </h1>
+        <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
           Open this page from a payment redirect.
         </p>
-        <Link to="/pricing" className="mt-4 inline-block">
-          <Button variant="secondary">See plans</Button>
+        <Link to="/pricing" className="mt-6">
+          <Button variant="secondary" leftIcon={<ArrowLeft />}>
+            See plans
+          </Button>
         </Link>
       </div>
     );
   }
 
   const effectiveStatus = data?.status || initialStatus || 'pending';
-  const copy = STATUS_COPY[effectiveStatus] || STATUS_COPY.pending;
+  const meta = STATUS[effectiveStatus] || STATUS.pending;
+  const Icon = meta.Icon;
+  const animateIcon = effectiveStatus === 'pending';
 
   return (
-    <div className="mx-auto max-w-md py-20 text-center">
-      <h1 className={`text-2xl font-semibold ${copy.accent}`}>{copy.title}</h1>
-      <p className="mt-2 text-sm text-slate-500">{copy.body}</p>
+    <div className="relative isolate">
+      <div className="pointer-events-none absolute inset-0 -z-10 bg-radial-fade" />
 
-      {message && (
-        <p className="mt-3 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700 dark:border-red-900/40 dark:bg-red-900/20 dark:text-red-200">
-          {decodeURIComponent(message)}
-        </p>
-      )}
+      <div className="mx-auto max-w-xl px-4 py-20 sm:px-6 lg:px-8">
+        <div
+          className={cn(
+            'overflow-hidden rounded-3xl border border-slate-200 bg-white p-8 text-center shadow-card ring-1 dark:border-slate-800 dark:bg-slate-900/70',
+            meta.ring,
+          )}
+        >
+          <span
+            className={cn(
+              'mx-auto inline-flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br text-white shadow-lift',
+              meta.accent,
+            )}
+          >
+            <Icon size={28} className={animateIcon ? 'animate-spin' : ''} />
+          </span>
 
-      <dl className="mx-auto mt-6 grid max-w-xs grid-cols-2 gap-y-1 rounded-md border border-slate-200 p-4 text-left text-sm dark:border-slate-800">
-        <dt className="text-slate-500">Reference</dt>
-        <dd className="text-right font-mono text-xs">{txnRefNo}</dd>
-        {(data?.planKey || planParam) && (
-          <>
-            <dt className="text-slate-500">Plan</dt>
-            <dd className="text-right capitalize">{data?.planKey || planParam}</dd>
-          </>
-        )}
-        {data?.amountPaisa !== undefined && data?.amountPaisa !== null && (
-          <>
-            <dt className="text-slate-500">Amount</dt>
-            <dd className="text-right">
-              Rs {(data.amountPaisa / 100).toLocaleString()}
+          <h1 className="mt-6 font-display text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-50">
+            {meta.title}
+          </h1>
+          <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">{meta.body}</p>
+
+          {message && (
+            <p className="mt-4 rounded-xl border border-red-200 bg-red-50 px-4 py-2.5 text-xs text-red-700 dark:border-red-900/40 dark:bg-red-950/30 dark:text-red-200">
+              {decodeURIComponent(message)}
+            </p>
+          )}
+
+          <dl className="mx-auto mt-7 grid max-w-sm grid-cols-2 gap-y-2.5 rounded-2xl border border-slate-200 bg-slate-50/60 p-5 text-left text-sm dark:border-slate-800 dark:bg-slate-800/30">
+            <dt className="text-slate-500 dark:text-slate-400">Reference</dt>
+            <dd className="text-right font-mono text-xs text-slate-700 dark:text-slate-300">
+              {txnRefNo}
             </dd>
-          </>
-        )}
-        <dt className="text-slate-500">Status</dt>
-        <dd className="text-right capitalize">{effectiveStatus}</dd>
-      </dl>
+            {(data?.planKey || planParam) && (
+              <>
+                <dt className="text-slate-500 dark:text-slate-400">Plan</dt>
+                <dd className="text-right font-medium capitalize text-slate-700 dark:text-slate-200">
+                  {data?.planKey || planParam}
+                </dd>
+              </>
+            )}
+            {data?.amountPaisa !== undefined && data?.amountPaisa !== null && (
+              <>
+                <dt className="text-slate-500 dark:text-slate-400">Amount</dt>
+                <dd className="text-right font-medium text-slate-700 dark:text-slate-200">
+                  Rs {(data.amountPaisa / 100).toLocaleString()}
+                </dd>
+              </>
+            )}
+            <dt className="text-slate-500 dark:text-slate-400">Status</dt>
+            <dd className="text-right font-medium capitalize text-slate-700 dark:text-slate-200">
+              {effectiveStatus}
+            </dd>
+          </dl>
 
-      {isError && (
-        <p className="mt-4 text-xs text-red-600">
-          Could not check status. Refresh in a moment.
-        </p>
-      )}
+          {isError && (
+            <p className="mt-4 text-xs text-red-600 dark:text-red-400">
+              Could not check status. Refresh in a moment.
+            </p>
+          )}
 
-      <div className="mt-8 flex justify-center gap-2">
-        <Link to="/articles">
-          <Button variant="secondary">Browse articles</Button>
-        </Link>
-        <Link to="/pricing">
-          <Button>Back to plans</Button>
-        </Link>
+          <div className="mt-8 flex flex-wrap items-center justify-center gap-2">
+            <Link to="/articles">
+              <Button variant="secondary">Browse articles</Button>
+            </Link>
+            <Link to="/pricing">
+              <Button rightIcon={<ArrowRight />}>Back to plans</Button>
+            </Link>
+          </div>
+        </div>
       </div>
     </div>
   );

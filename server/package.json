@@ -5,8 +5,8 @@
   "type": "module",
   "main": "src/server.js",
   "scripts": {
-    "dev": "node --watch --env-file=.env src/server.js",
-    "dev:worker": "node --watch --env-file=.env workers/index.js",
+    "dev": "node --watch-path=./src --env-file=.env src/server.js",
+    "dev:worker": "node --watch-path=./workers --env-file=.env workers/index.js",
     "start": "node src/server.js",
     "start:worker": "node workers/index.js",
     "test": "vitest run",

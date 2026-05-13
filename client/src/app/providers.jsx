@@ -8,7 +8,19 @@ export function AppProviders({ children }) {
     <ErrorBoundary>
       <QueryClientProvider client={queryClient}>
         {children}
-        <Toaster position="top-right" richColors closeButton />
+        <Toaster
+          position="top-right"
+          richColors
+          closeButton
+          toastOptions={{
+            classNames: {
+              toast:
+                'rounded-xl border border-slate-200 dark:border-slate-800 shadow-card',
+              title: 'font-semibold',
+              description: 'text-slate-500 dark:text-slate-400',
+            },
+          }}
+        />
       </QueryClientProvider>
     </ErrorBoundary>
   );
