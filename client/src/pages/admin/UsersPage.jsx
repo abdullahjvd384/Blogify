@@ -237,24 +237,14 @@ export default function UsersPage() {
                                 </Button>
                               )}
                               {u.role === 'writer' && (
-                                <>
-                                  <Button
-                                    size="xs"
-                                    variant="secondary"
-                                    leftIcon={<ArrowUpCircle />}
-                                    onClick={() => patch(u.id, { role: 'admin' }, 'Promoted to admin')}
-                                  >
-                                    → admin
-                                  </Button>
-                                  <Button
-                                    size="xs"
-                                    variant="ghost"
-                                    leftIcon={<ArrowDownCircle />}
-                                    onClick={() => patch(u.id, { role: 'reader' }, 'Demoted to reader')}
-                                  >
-                                    → reader
-                                  </Button>
-                                </>
+                                <Button
+                                  size="xs"
+                                  variant="ghost"
+                                  leftIcon={<ArrowDownCircle />}
+                                  onClick={() => patch(u.id, { role: 'reader' }, 'Demoted to reader')}
+                                >
+                                  → reader
+                                </Button>
                               )}
                               {u.role === 'admin' && (
                                 <Button
@@ -266,6 +256,7 @@ export default function UsersPage() {
                                   → writer
                                 </Button>
                               )}
+                              {/* Promotion *to* admin is intentionally not available — set via seed/DB. */}
 
                               {!isBanned && !isDeleted && (
                                 <Button

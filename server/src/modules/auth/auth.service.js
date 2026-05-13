@@ -35,7 +35,7 @@ export async function signup(input, ctx = {}) {
     password_hash: passwordHash,
     name: input.name,
     timezone: input.timezone || 'Asia/Karachi',
-    role: 'reader',
+    role: 'writer',
     status: 'active',
   });
 

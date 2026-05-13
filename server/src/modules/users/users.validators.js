@@ -13,9 +13,14 @@ export const userIdParamSchema = z.object({
   id: z.string().regex(/^[a-f0-9]{24}$/, 'Invalid user id'),
 });
 
+// Admin role is intentionally not assignable via this endpoint — promote a user
+// to admin manually (seed script or direct DB edit) so a compromised admin
+// account can't mint new ones.
+const ASSIGNABLE_ROLES = USER_ROLES.filter((r) => r !== 'admin');
+
 export const updateUserSchema = z
   .object({
-    role: z.enum(USER_ROLES).optional(),
+    role: z.enum(ASSIGNABLE_ROLES).optional(),
     status: z.enum(USER_STATUSES).optional(),
     bannedReason: z.string().trim().max(280).optional(),
   })
