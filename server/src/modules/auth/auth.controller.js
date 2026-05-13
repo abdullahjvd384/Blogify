@@ -41,3 +41,29 @@ export async function me(req, res) {
   const user = await authService.getProfile(req.user.id);
   return ok(res, { user: publicUser(user) });
 }
+
+export async function forgotPassword(req, res) {
+  await authService.forgotPassword(req.valid.body.email);
+  // Always 204 regardless of whether the user existed — no enumeration.
+  return noContent(res);
+}
+
+export async function resetPassword(req, res) {
+  const { token, password } = req.valid.body;
+  await authService.resetPassword(token, password);
+  return noContent(res);
+}
+
+export async function verifyEmail(req, res) {
+  const user = await authService.verifyEmail(req.valid.body.token);
+  return ok(res, { user: publicUser(user) });
+}
+
+export async function resendVerification(req, res) {
+  const user = await authService.getProfile(req.user.id);
+  if (user.email_verified_at) {
+    return ok(res, { sent: false, alreadyVerified: true });
+  }
+  await authService.sendVerificationEmail(user);
+  return ok(res, { sent: true });
+}

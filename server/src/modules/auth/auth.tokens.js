@@ -32,3 +32,17 @@ export function hashRefreshToken(raw) {
 export function refreshExpiry() {
   return new Date(Date.now() + TOKEN_TTL.REFRESH_SECONDS * 1000);
 }
+
+/**
+ * Generates a single-use email token (verify_email or password_reset).
+ * Raw token goes in the email link, hash is stored in DB.
+ */
+export function generateEmailToken() {
+  const raw = randomBytes(32).toString('hex');
+  const hash = createHash('sha256').update(raw).digest('hex');
+  return { raw, hash };
+}
+
+export function hashEmailToken(raw) {
+  return createHash('sha256').update(raw).digest('hex');
+}

@@ -7,6 +7,9 @@ import { ProtectedRoute } from '@/components/ProtectedRoute';
 import HomePage from '@/pages/public/HomePage';
 import LoginPage from '@/pages/public/LoginPage';
 import SignupPage from '@/pages/public/SignupPage';
+import ForgotPasswordPage from '@/pages/public/ForgotPasswordPage';
+import ResetPasswordPage from '@/pages/public/ResetPasswordPage';
+import VerifyEmailPage from '@/pages/public/VerifyEmailPage';
 import PricingPage from '@/pages/public/PricingPage';
 import PaymentReturnPage from '@/pages/public/PaymentReturnPage';
 import NotFoundPage from '@/pages/public/NotFoundPage';
@@ -32,6 +35,9 @@ export const router = createBrowserRouter([
       { path: '/payments/return', element: <PaymentReturnPage /> },
       { path: '/login', element: <LoginPage /> },
       { path: '/signup', element: <SignupPage /> },
+      { path: '/forgot-password', element: <ForgotPasswordPage /> },
+      { path: '/reset-password', element: <ResetPasswordPage /> },
+      { path: '/verify-email', element: <VerifyEmailPage /> },
       { path: '*', element: <NotFoundPage /> },
     ],
   },

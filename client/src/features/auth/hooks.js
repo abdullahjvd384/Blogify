@@ -57,3 +57,33 @@ export function useLogout() {
     },
   });
 }
+
+export function useForgotPassword() {
+  return useMutation({
+    mutationFn: authApi.forgotPassword,
+  });
+}
+
+export function useResetPassword() {
+  return useMutation({
+    mutationFn: ({ token, password }) => authApi.resetPassword(token, password),
+  });
+}
+
+export function useVerifyEmail() {
+  const qc = useQueryClient();
+  const setUser = useAuthStore((s) => s.setUser);
+  return useMutation({
+    mutationFn: authApi.verifyEmail,
+    onSuccess: (user) => {
+      setUser(user);
+      qc.setQueryData(['me'], user);
+    },
+  });
+}
+
+export function useResendVerification() {
+  return useMutation({
+    mutationFn: authApi.resendVerification,
+  });
+}

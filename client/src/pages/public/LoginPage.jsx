@@ -75,7 +75,7 @@ export default function LoginPage() {
           error={errors.password?.message}
           action={
             <Link
-              to="#"
+              to="/forgot-password"
               className="text-xs font-medium text-brand-600 hover:underline dark:text-brand-300"
             >
               Forgot password?
