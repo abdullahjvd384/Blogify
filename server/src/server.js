@@ -1,3 +1,8 @@
+import dns from 'node:dns';
+// Prefer Google/Cloudflare DNS for SRV lookups (Atlas, Upstash) when the
+// system resolver is flaky (common on some home/ISP networks).
+dns.setServers(['8.8.8.8', '1.1.1.1', ...dns.getServers()]);
+
 import http from 'node:http';
 import { env } from './config/env.js';
 import { logger } from './config/logger.js';

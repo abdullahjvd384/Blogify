@@ -1,3 +1,6 @@
+import dns from 'node:dns';
+dns.setServers(['8.8.8.8', '1.1.1.1', ...dns.getServers()]);
+
 import { connectDb, disconnectDb } from '../src/config/db.js';
 import { logger } from '../src/config/logger.js';
 import { redis } from '../src/config/redis.js';
