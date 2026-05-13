@@ -87,3 +87,22 @@ export function useResendVerification() {
     mutationFn: authApi.resendVerification,
   });
 }
+
+export function useUpdateProfile() {
+  const qc = useQueryClient();
+  const setUser = useAuthStore((s) => s.setUser);
+  return useMutation({
+    mutationFn: authApi.updateProfile,
+    onSuccess: (user) => {
+      setUser(user);
+      qc.setQueryData(['me'], user);
+    },
+  });
+}
+
+export function useChangePassword() {
+  return useMutation({
+    mutationFn: ({ currentPassword, newPassword }) =>
+      authApi.changePassword(currentPassword, newPassword),
+  });
+}

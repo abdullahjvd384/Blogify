@@ -11,4 +11,7 @@ export const authApi = {
   verifyEmail: (token) => api.post('/auth/verify-email', { token }).then((r) => r.data.data.user),
   resendVerification: () =>
     api.post('/auth/resend-verification').then((r) => r.data.data),
+  updateProfile: (patch) => api.patch('/auth/me', patch).then((r) => r.data.data.user),
+  changePassword: (currentPassword, newPassword) =>
+    api.post('/auth/change-password', { currentPassword, newPassword }).then(() => null),
 };

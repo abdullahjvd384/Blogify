@@ -24,3 +24,19 @@ export const resetPasswordFormSchema = z
     message: "Passwords don't match",
     path: ['confirm'],
   });
+
+export const profileFormSchema = z.object({
+  name: z.string().trim().min(1, 'Name is required').max(80),
+  timezone: z.string().trim().min(1, 'Timezone is required').max(64),
+});
+
+export const changePasswordFormSchema = z
+  .object({
+    currentPassword: z.string().min(1, 'Enter your current password'),
+    newPassword: z.string().min(8, 'New password must be at least 8 characters').max(128),
+    confirm: z.string().min(1, 'Confirm your password'),
+  })
+  .refine((v) => v.newPassword === v.confirm, {
+    message: "Passwords don't match",
+    path: ['confirm'],
+  });

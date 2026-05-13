@@ -20,16 +20,28 @@ import { Skeleton } from '@/components/ui/Skeleton';
 import { readApiError } from '@/lib/apiError';
 import { cn } from '@/lib/cn';
 
+// Plan-specific styling and *extra* perks. The "X articles per day" line is
+// derived from plan.dailyLimit at render time so it can never drift from the
+// shared constants.
 const PLAN_STYLES = {
   free: {
     icon: BookOpen,
     accent: 'from-slate-500 to-slate-700',
     border: 'border-slate-200 dark:border-slate-800',
     perks: [
-      'Read up to 3 articles per day',
       'Browse the full public feed',
       'Vote and bookmark articles',
       'Dark mode and quiet UI',
+    ],
+  },
+  basic: {
+    icon: Sparkles,
+    accent: 'from-sky-500 to-cyan-500',
+    border: 'border-sky-300 dark:border-sky-700',
+    perks: [
+      'Browse the full public feed',
+      'Vote and bookmark articles',
+      'Priority email support',
     ],
   },
   pro: {
@@ -37,24 +49,27 @@ const PLAN_STYLES = {
     accent: 'from-brand-500 to-accent-500',
     border: 'border-brand-300 dark:border-brand-700',
     perks: [
-      'Up to 50 articles per day',
       'Priority moderation queue',
       'Advanced reading analytics',
       'Save unlimited bookmarks',
     ],
   },
-  premium: {
+  god_tier: {
     icon: Crown,
     accent: 'from-amber-500 to-rose-500',
     border: 'border-amber-300 dark:border-amber-700',
     perks: [
-      'Unlimited daily reads',
-      'Premium-only collections',
+      'God-tier-only collections',
       'Early access to new features',
       'Priority support',
     ],
   },
 };
+
+function readLimitPerk(plan) {
+  if (plan.dailyLimit === null) return 'Unlimited daily reads';
+  return `Read up to ${plan.dailyLimit} articles per day`;
+}
 
 const SUPPORT_FACTS = [
   { icon: ShieldCheck, label: 'AI-moderated quality on every plan' },
@@ -193,7 +208,7 @@ export default function PricingPage() {
                 </p>
 
                 <ul className="mt-6 space-y-2.5 text-sm">
-                  {style.perks.map((perk) => (
+                  {[readLimitPerk(plan), ...style.perks].map((perk) => (
                     <li key={perk} className="flex items-start gap-2 text-slate-600 dark:text-slate-300">
                       <Check size={15} className="mt-0.5 shrink-0 text-emerald-500" />
                       <span>{perk}</span>

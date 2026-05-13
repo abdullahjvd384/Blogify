@@ -8,6 +8,8 @@ import {
   forgotPasswordSchema,
   resetPasswordSchema,
   verifyEmailSchema,
+  updateProfileSchema,
+  changePasswordSchema,
 } from './auth.validators.js';
 import * as authController from './auth.controller.js';
 
@@ -38,6 +40,20 @@ router.post(
   '/resend-verification',
   authRequired,
   asyncHandler(authController.resendVerification),
+);
+
+router.patch(
+  '/me',
+  authRequired,
+  validate(updateProfileSchema),
+  asyncHandler(authController.updateProfile),
+);
+
+router.post(
+  '/change-password',
+  authRequired,
+  validate(changePasswordSchema),
+  asyncHandler(authController.changePassword),
 );
 
 export { router as authRouter };

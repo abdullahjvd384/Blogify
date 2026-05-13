@@ -29,3 +29,17 @@ export const resetPasswordSchema = z.object({
 export const verifyEmailSchema = z.object({
   token: z.string().min(32).max(128),
 });
+
+export const updateProfileSchema = z
+  .object({
+    name: z.string().trim().min(1).max(80).optional(),
+    timezone: z.string().trim().min(1).max(64).optional(),
+  })
+  .refine((v) => v.name !== undefined || v.timezone !== undefined, {
+    message: 'Provide at least one field to update',
+  });
+
+export const changePasswordSchema = z.object({
+  currentPassword: z.string().min(1, 'Current password is required'),
+  newPassword: passwordSchema,
+});

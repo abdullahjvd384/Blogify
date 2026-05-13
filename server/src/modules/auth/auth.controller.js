@@ -67,3 +67,16 @@ export async function resendVerification(req, res) {
   await authService.sendVerificationEmail(user);
   return ok(res, { sent: true });
 }
+
+export async function updateProfile(req, res) {
+  const user = await authService.updateProfile(req.user.id, req.valid.body);
+  return ok(res, { user: publicUser(user) });
+}
+
+export async function changePassword(req, res) {
+  const { currentPassword, newPassword } = req.valid.body;
+  await authService.changePassword(req.user.id, currentPassword, newPassword);
+  // Revoking refresh tokens kicks this session too — but we keep the current
+  // access cookie valid until it expires (15 min), so the UI stays signed in.
+  return noContent(res);
+}

@@ -240,6 +240,13 @@ export function Header() {
                     </Link>
                   )}
                   <Link
+                    to="/account/settings"
+                    className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-800"
+                  >
+                    <UserIcon size={15} className="text-slate-400" />
+                    Account settings
+                  </Link>
+                  <Link
                     to="/account/subscription"
                     className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-800"
                   >

@@ -21,6 +21,7 @@ import ModerationPage from '@/pages/admin/ModerationPage';
 import UsersPage from '@/pages/admin/UsersPage';
 import PaymentsPage from '@/pages/admin/PaymentsPage';
 import SubscriptionPage from '@/pages/account/SubscriptionPage';
+import SettingsPage from '@/pages/account/SettingsPage';
 
 export const router = createBrowserRouter([
   {
@@ -68,7 +69,8 @@ export const router = createBrowserRouter([
       </AuthGate>
     ),
     children: [
-      { path: '/account', element: <Navigate to="/account/subscription" replace /> },
+      { path: '/account', element: <Navigate to="/account/settings" replace /> },
+      { path: '/account/settings', element: <SettingsPage /> },
       { path: '/account/subscription', element: <SubscriptionPage /> },
     ],
   },

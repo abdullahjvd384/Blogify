@@ -1,14 +1,15 @@
 import { useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Sparkles, X, Clock, ArrowRight, Crown, Zap } from 'lucide-react';
+import { Sparkles, X, Clock, ArrowRight, Crown, Zap, Star } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { useCountdown } from '@/lib/useCountdown';
 import { usePlans } from '@/features/subscription/hooks';
 import { cn } from '@/lib/cn';
 
 const PLAN_ICONS = {
+  basic: Star,
   pro: Zap,
-  premium: Crown,
+  god_tier: Crown,
 };
 
 export function PaywallModal({ open, onClose, usage }) {

@@ -229,6 +229,41 @@ export async function getProfile(userId) {
   return user;
 }
 
+/**
+ * Updates profile fields the user is allowed to change directly. Role, email,
+ * and status are NOT touched here — those go through admin endpoints (or, for
+ * email, a separate verify-new-address flow we haven't built yet).
+ */
+export async function updateProfile(userId, patch) {
+  const user = await User.findById(userId);
+  if (!user) throw new NotFoundError('User not found');
+  if (patch.name !== undefined) user.name = patch.name;
+  if (patch.timezone !== undefined) user.timezone = patch.timezone;
+  await user.save();
+  return user.toObject();
+}
+
+/**
+ * Self-service password change. Requires the current password, hashes the new
+ * one, and revokes every refresh token so other devices get kicked out.
+ */
+export async function changePassword(userId, currentPassword, newPassword) {
+  const user = await User.findById(userId);
+  if (!user) throw new NotFoundError('User not found');
+  const matches = await bcrypt.compare(currentPassword, user.password_hash);
+  if (!matches) throw new UnauthorizedError('Current password is incorrect');
+  if (currentPassword === newPassword) {
+    throw new ValidationError('New password must be different from the current one');
+  }
+  user.password_hash = await bcrypt.hash(newPassword, BCRYPT_COST);
+  await user.save();
+  await RefreshToken.updateMany(
+    { user_id: user._id, revoked_at: null },
+    { $set: { revoked_at: new Date() } },
+  );
+  return user.toObject();
+}
+
 async function issueTokens(user, ctx) {
   const accessToken = signAccessToken({ id: user._id.toString(), email: user.email, role: user.role });
   const { raw, hash } = generateRefreshToken();
