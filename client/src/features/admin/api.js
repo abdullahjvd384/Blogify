@@ -9,4 +9,10 @@ export const adminApi = {
     api.post(`/admin/moderation/${id}/reject`, { reasons }).then((r) => r.data.data.article),
   retry: (id) =>
     api.post(`/admin/moderation/${id}/retry`).then((r) => r.data.data.article),
+  listUsers: (params = {}) =>
+    api.get('/admin/users', { params }).then((r) => r.data),
+  userStats: () =>
+    api.get('/admin/users/stats').then((r) => r.data.data),
+  updateUser: (id, patch) =>
+    api.patch(`/admin/users/${id}`, patch).then((r) => r.data.data.user),
 };

@@ -15,6 +15,7 @@ import ArticlePage from '@/pages/reader/ArticlePage';
 import DraftsPage from '@/pages/writer/DraftsPage';
 import EditorPage from '@/pages/writer/EditorPage';
 import ModerationPage from '@/pages/admin/ModerationPage';
+import UsersPage from '@/pages/admin/UsersPage';
 
 export const router = createBrowserRouter([
   {
@@ -37,7 +38,7 @@ export const router = createBrowserRouter([
   {
     element: (
       <AuthGate>
-        <ProtectedRoute>
+        <ProtectedRoute role="writer">
           <AppLayout />
         </ProtectedRoute>
       </AuthGate>
@@ -60,6 +61,7 @@ export const router = createBrowserRouter([
     children: [
       { path: '/admin', element: <Navigate to="/admin/moderation" replace /> },
       { path: '/admin/moderation', element: <ModerationPage /> },
+      { path: '/admin/users', element: <UsersPage /> },
     ],
   },
 ]);

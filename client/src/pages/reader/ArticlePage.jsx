@@ -137,6 +137,29 @@ export default function ArticlePage() {
 
   if (isError) {
     const status = error?.response?.status;
+    if (status === 401) {
+      return (
+        <div className="mx-auto flex max-w-md flex-col items-center px-6 py-20 text-center">
+          <span className="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-brand-100 text-brand-700 dark:bg-brand-950/60 dark:text-brand-300">
+            <Sparkles size={22} />
+          </span>
+          <h1 className="mt-5 font-display text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-50">
+            Log in to read this article
+          </h1>
+          <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
+            Articles are free to read with a free account. Sign up takes about ten seconds.
+          </p>
+          <div className="mt-6 flex flex-wrap items-center justify-center gap-2">
+            <Link to={`/login?from=/articles/${slug}`}>
+              <Button>Log in</Button>
+            </Link>
+            <Link to={`/signup?from=/articles/${slug}`}>
+              <Button variant="outline">Sign up</Button>
+            </Link>
+          </div>
+        </div>
+      );
+    }
     if (status === 404) {
       return (
         <div className="mx-auto flex max-w-md flex-col items-center px-6 py-20 text-center">

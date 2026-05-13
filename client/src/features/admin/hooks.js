@@ -32,3 +32,29 @@ export function useAdminRetry() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ['admin', 'moderation'] }),
   });
 }
+
+export function useAdminUsers({ q, role, status, limit = 20 } = {}) {
+  return useQuery({
+    queryKey: ['admin', 'users', { q, role, status, limit }],
+    queryFn: () => adminApi.listUsers({ q, role, status, limit }),
+    staleTime: 5_000,
+  });
+}
+
+export function useAdminUserStats() {
+  return useQuery({
+    queryKey: ['admin', 'users', 'stats'],
+    queryFn: () => adminApi.userStats(),
+    staleTime: 10_000,
+  });
+}
+
+export function useAdminUpdateUser() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, patch }) => adminApi.updateUser(id, patch),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['admin', 'users'] });
+    },
+  });
+}

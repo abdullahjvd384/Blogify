@@ -3,6 +3,7 @@ import { healthRouter } from './modules/health/health.routes.js';
 import { authRouter } from './modules/auth/auth.routes.js';
 import { articlesRouter } from './modules/articles/articles.routes.js';
 import { moderationRouter } from './modules/moderation/moderation.routes.js';
+import { adminUsersRouter } from './modules/users/users.routes.js';
 import { subscriptionsRouter } from './modules/subscriptions/subscriptions.routes.js';
 import { readsRouter } from './modules/reads/reads.routes.js';
 import { paymentsRouter } from './modules/payments/payments.routes.js';
@@ -17,5 +18,6 @@ export function buildRouter() {
   api.use('/reads', readsRouter);
   api.use('/payments', paymentsRouter);
   api.use('/admin/moderation', moderationRouter);
+  api.use('/admin/users', adminUsersRouter);
   return api;
 }

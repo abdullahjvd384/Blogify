@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { asyncHandler } from '../../utils/asyncHandler.js';
-import { authRequired, authOptional } from '../../middleware/auth.js';
+import { authRequired } from '../../middleware/auth.js';
+import { requireFreshRole } from '../../middleware/roles.js';
 import { validate } from '../../middleware/validate.js';
 import {
   createArticleSchema,
@@ -33,7 +34,7 @@ router.get(
 
 router.get(
   '/:slug',
-  authOptional,
+  authRequired,
   validate(articleSlugParamSchema, 'params'),
   asyncHandler(ctrl.getBySlug),
 );
@@ -41,6 +42,7 @@ router.get(
 router.post(
   '/',
   authRequired,
+  requireFreshRole('writer'),
   validate(createArticleSchema),
   asyncHandler(ctrl.create),
 );
@@ -48,6 +50,7 @@ router.post(
 router.patch(
   '/:id',
   authRequired,
+  requireFreshRole('writer'),
   validate(articleIdParamSchema, 'params'),
   validate(updateArticleSchema),
   asyncHandler(ctrl.update),
@@ -56,6 +59,7 @@ router.patch(
 router.delete(
   '/:id',
   authRequired,
+  requireFreshRole('writer'),
   validate(articleIdParamSchema, 'params'),
   asyncHandler(ctrl.remove),
 );
@@ -63,6 +67,7 @@ router.delete(
 router.post(
   '/:id/submit',
   authRequired,
+  requireFreshRole('writer'),
   validate(articleIdParamSchema, 'params'),
   asyncHandler(ctrl.submit),
 );

@@ -25,7 +25,7 @@ import { cn } from '@/lib/cn';
 const navItems = [
   { to: '/articles', label: 'Read', icon: BookOpen },
   { to: '/pricing', label: 'Pricing', icon: Sparkles },
-  { to: '/writer', label: 'Write', icon: PenLine, requiresAuth: true },
+  { to: '/writer', label: 'Write', icon: PenLine, requiresRole: 'writer' },
   { to: '/admin', label: 'Admin', icon: Shield, requiresRole: 'admin' },
 ];
 
@@ -81,7 +81,11 @@ export function Header() {
 
   const visibleItems = navItems.filter((item) => {
     if (item.requiresAuth && !user) return false;
-    if (item.requiresRole && user?.role !== item.requiresRole) return false;
+    if (item.requiresRole) {
+      if (!user) return false;
+      // admin is a superset — always show role-gated items to admin
+      if (user.role !== 'admin' && user.role !== item.requiresRole) return false;
+    }
     return true;
   });
 
@@ -226,13 +230,15 @@ export function Header() {
                     <BookOpen size={15} className="text-slate-400" />
                     Browse articles
                   </Link>
-                  <Link
-                    to="/writer/drafts"
-                    className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-800"
-                  >
-                    <PenLine size={15} className="text-slate-400" />
-                    Writer studio
-                  </Link>
+                  {(user.role === 'writer' || user.role === 'admin') && (
+                    <Link
+                      to="/writer/drafts"
+                      className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-800"
+                    >
+                      <PenLine size={15} className="text-slate-400" />
+                      Writer studio
+                    </Link>
+                  )}
                   <Link
                     to="/pricing"
                     className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-800"
@@ -241,13 +247,22 @@ export function Header() {
                     Plans & billing
                   </Link>
                   {user.role === 'admin' && (
-                    <Link
-                      to="/admin/moderation"
-                      className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-amber-700 hover:bg-amber-50 dark:text-amber-300 dark:hover:bg-amber-950/50"
-                    >
-                      <Shield size={15} />
-                      Moderation queue
-                    </Link>
+                    <>
+                      <Link
+                        to="/admin/moderation"
+                        className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-amber-700 hover:bg-amber-50 dark:text-amber-300 dark:hover:bg-amber-950/50"
+                      >
+                        <Shield size={15} />
+                        Moderation queue
+                      </Link>
+                      <Link
+                        to="/admin/users"
+                        className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-amber-700 hover:bg-amber-50 dark:text-amber-300 dark:hover:bg-amber-950/50"
+                      >
+                        <Shield size={15} />
+                        User management
+                      </Link>
+                    </>
                   )}
 
                   <div className="my-2 h-px bg-slate-200 dark:bg-slate-800" />

@@ -11,6 +11,8 @@ const VARIANTS = {
     'bg-emerald-50 text-emerald-700 ring-1 ring-inset ring-emerald-200/80 dark:bg-emerald-950/60 dark:text-emerald-200 dark:ring-emerald-800/60',
   warning:
     'bg-amber-50 text-amber-700 ring-1 ring-inset ring-amber-200/80 dark:bg-amber-950/60 dark:text-amber-200 dark:ring-amber-800/60',
+  danger:
+    'bg-red-50 text-red-700 ring-1 ring-inset ring-red-200/80 dark:bg-red-950/60 dark:text-red-200 dark:ring-red-800/60',
   outline:
     'bg-white/40 text-slate-700 ring-1 ring-inset ring-slate-200 dark:bg-slate-900/40 dark:text-slate-200 dark:ring-slate-700',
 };
