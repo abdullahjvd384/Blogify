@@ -10,15 +10,19 @@ const RESEND_API = 'https://api.resend.com/emails';
  *
  * @param {{ to: string, subject: string, html: string, text?: string }} input
  */
+function logDevLink({ to, subject, html, reason }) {
+  // Pull the primary action link out of the HTML so devs can copy/paste it
+  // straight from the log without parsing the whole template.
+  const linkMatch = html.match(/href="(https?:\/\/[^"]+(?:verify-email|reset-password)[^"]*)"/i);
+  logger.warn(
+    { to, subject, link: linkMatch?.[1] || '(none found)', reason },
+    'email-dev: copy the link below into your browser',
+  );
+}
+
 export async function sendEmail({ to, subject, html, text }) {
   if (!env.RESEND_API_KEY) {
-    // Pull the primary action link out of the HTML so devs can copy/paste it
-    // straight from the log without parsing the whole template.
-    const linkMatch = html.match(/href="(https?:\/\/[^"]+(?:verify-email|reset-password)[^"]*)"/i);
-    logger.warn(
-      { to, subject, link: linkMatch?.[1] || '(none found)' },
-      'email-dev: RESEND_API_KEY not set — copy the link below into your browser',
-    );
+    logDevLink({ to, subject, html, reason: 'RESEND_API_KEY not set' });
     return { id: 'dev-' + Date.now() };
   }
 
@@ -31,13 +35,25 @@ export async function sendEmail({ to, subject, html, text }) {
     body: JSON.stringify({ from: env.EMAIL_FROM, to, subject, html, text: text || htmlToText(html) }),
   });
 
-  if (!res.ok) {
-    const body = await res.text().catch(() => '');
-    logger.error({ status: res.status, body, to, subject }, 'resend send failed');
-    throw new Error(`Resend send failed: ${res.status}`);
+  if (res.ok) return res.json();
+
+  const body = await res.text().catch(() => '');
+  logger.warn({ status: res.status, body, to, subject }, 'resend send failed');
+
+  // Resend's free / unverified-domain accounts reject any recipient other than
+  // the account owner's own email. That's an environment limit, not a bug —
+  // fall back to dev-mode logging so the dev (or the human running the demo)
+  // can still complete the flow by copy/pasting the link from server.log.
+  const isTestModeRestriction =
+    res.status === 403 &&
+    (body.includes('testing emails') || body.includes('verify a domain'));
+
+  if (isTestModeRestriction) {
+    logDevLink({ to, subject, html, reason: 'Resend test-mode rejected this recipient' });
+    return { id: 'devfallback-' + Date.now() };
   }
 
-  return res.json();
+  throw new Error(`Resend send failed: ${res.status}`);
 }
 
 /** Quick HTML-to-text fallback. Not perfect but good enough for plaintext part. */
