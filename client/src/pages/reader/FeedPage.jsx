@@ -1,7 +1,8 @@
 import { useMemo, useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Search, Filter, AlertCircle, Inbox, ArrowDown } from 'lucide-react';
-import { useArticleFeed } from '@/features/articles/hooks';
+import { Search, Filter, AlertCircle, Inbox, ArrowDown, Sparkles, Newspaper } from 'lucide-react';
+import { useArticleFeed, useForYouFeed } from '@/features/articles/hooks';
+import { useAuthStore } from '@/stores/authStore';
 import { ArticleCard } from '@/components/ArticleCard';
 import { ArticleCardSkeleton } from '@/components/ui/Skeleton';
 import { Input } from '@/components/ui/Input';
@@ -18,16 +19,21 @@ const sortOptions = [
 export default function FeedPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const urlTag = searchParams.get('tag') || '';
+  const user = useAuthStore((s) => s.user);
 
   const [query, setQuery] = useState('');
   const [sort, setSort] = useState('recent');
   const [activeTag, setActiveTag] = useState(urlTag || null);
+  const [mode, setMode] = useState('latest'); // 'foryou' | 'latest'
 
   useEffect(() => {
     setActiveTag(urlTag || null);
   }, [urlTag]);
 
-  const feed = useArticleFeed({ tag: activeTag || undefined, limit: 20 });
+  const isForYou = mode === 'foryou' && Boolean(user);
+  const latestFeed = useArticleFeed({ tag: activeTag || undefined, limit: 20 });
+  const forYouFeed = useForYouFeed({ enabled: isForYou });
+  const feed = isForYou ? forYouFeed : latestFeed;
   const items = useMemo(
     () => (feed.data?.pages || []).flatMap((p) => p.data || []),
     [feed.data],
@@ -100,6 +106,36 @@ export default function FeedPage() {
           </div>
         </div>
 
+        {user && (
+          <div className="mt-6 inline-flex rounded-lg bg-slate-100 p-1 ring-1 ring-inset ring-slate-200 dark:bg-slate-900 dark:ring-slate-800">
+            <button
+              type="button"
+              onClick={() => setMode('foryou')}
+              className={cn(
+                'inline-flex items-center gap-1.5 rounded-md px-3.5 py-1.5 text-sm font-medium transition',
+                isForYou
+                  ? 'bg-white text-slate-900 shadow-soft dark:bg-slate-800 dark:text-slate-50'
+                  : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100',
+              )}
+            >
+              <Sparkles size={14} /> For you
+            </button>
+            <button
+              type="button"
+              onClick={() => setMode('latest')}
+              className={cn(
+                'inline-flex items-center gap-1.5 rounded-md px-3.5 py-1.5 text-sm font-medium transition',
+                !isForYou
+                  ? 'bg-white text-slate-900 shadow-soft dark:bg-slate-800 dark:text-slate-50'
+                  : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100',
+              )}
+            >
+              <Newspaper size={14} /> Latest
+            </button>
+          </div>
+        )}
+
+        {!isForYou && (
         <div className="mt-8 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div className="flex flex-wrap items-center gap-2">
             <button
@@ -161,6 +197,7 @@ export default function FeedPage() {
             </div>
           </div>
         </div>
+        )}
 
         <div className="mt-10">
           {feed.isError && (

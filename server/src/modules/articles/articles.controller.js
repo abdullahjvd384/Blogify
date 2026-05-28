@@ -39,6 +39,11 @@ export async function listFollowingFeed(req, res) {
   return res.json({ data: presentMany(items), page: { cursor, hasMore } });
 }
 
+export async function listForYou(req, res) {
+  const { items, cursor, hasMore } = await service.listForYou(req.user.id, req.valid.query);
+  return res.json({ data: presentMany(items), page: { cursor, hasMore } });
+}
+
 export async function listMine(req, res) {
   const { items, cursor, hasMore } = await service.listMine(req.user.id, req.valid.query);
   return res.json({ data: presentMany(items), page: { cursor, hasMore } });
@@ -47,4 +52,9 @@ export async function listMine(req, res) {
 export async function getMineById(req, res) {
   const article = await service.getMineById(req.user.id, req.valid.params.id, req.user);
   return ok(res, { article: presentArticle(article) });
+}
+
+export async function getMyStats(req, res) {
+  const stats = await service.getWriterStats(req.user.id);
+  return ok(res, { stats });
 }

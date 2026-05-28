@@ -258,7 +258,7 @@ export default function ArticlePage() {
           {article.tags?.length > 0 && (
             <div className="mt-6 flex flex-wrap gap-1.5">
               {article.tags.slice(0, 6).map((tag) => (
-                <Link key={tag} to={`/articles?tag=${encodeURIComponent(tag)}`}>
+                <Link key={tag} to={`/tag/${encodeURIComponent(tag)}`}>
                   <Badge variant="brand" leftIcon={<TagIcon />}>
                     {tag}
                   </Badge>

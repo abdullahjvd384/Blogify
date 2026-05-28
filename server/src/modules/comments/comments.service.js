@@ -2,6 +2,7 @@ import mongoose from 'mongoose';
 import { Comment } from '../../models/Comment.js';
 import { Article } from '../../models/Article.js';
 import { User } from '../../models/User.js';
+import { notify } from '../notifications/notifications.service.js';
 import { ConflictError, ForbiddenError, NotFoundError, ValidationError } from '../../utils/errors.js';
 
 const AUTHOR_FIELDS = { name: 1, username: 1, avatar_url: 1 };
@@ -35,7 +36,10 @@ export async function listForArticle(articleId, { cursor, limit, parentId }) {
 }
 
 export async function create(articleId, authorId, { body, parentId }) {
-  const article = await Article.findOne({ _id: articleId, deleted_at: null }, { status: 1 }).lean();
+  const article = await Article.findOne(
+    { _id: articleId, deleted_at: null },
+    { status: 1, author_id: 1 },
+  ).lean();
   if (!article) throw new NotFoundError('Article not found');
   if (article.status !== 'published') {
     throw new ConflictError('Cannot comment on an unpublished article');
@@ -59,6 +63,23 @@ export async function create(articleId, authorId, { body, parentId }) {
   await Article.findByIdAndUpdate(articleId, { $inc: { 'stats_snapshot.comments_count': 1 } });
   if (parent) {
     await Comment.findByIdAndUpdate(parent._id, { $inc: { replies_count: 1 } });
+    // A reply notifies the parent comment's author.
+    await notify({
+      recipientId: parent.author_id,
+      actorId: authorId,
+      type: 'reply',
+      articleId: article._id,
+      commentId: comment._id,
+    });
+  } else {
+    // A top-level comment notifies the article's author.
+    await notify({
+      recipientId: article.author_id,
+      actorId: authorId,
+      type: 'comment',
+      articleId: article._id,
+      commentId: comment._id,
+    });
   }
 
   const [presented] = await attachCommentAuthors([comment.toObject()]);

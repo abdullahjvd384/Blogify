@@ -26,11 +26,19 @@ router.get(
   asyncHandler(ctrl.listFollowingFeed),
 );
 router.get(
+  '/for-you',
+  authRequired,
+  validate(feedQuerySchema, 'query'),
+  asyncHandler(ctrl.listForYou),
+);
+router.get(
   '/mine',
   authRequired,
   validate(minePagedQuerySchema, 'query'),
   asyncHandler(ctrl.listMine),
 );
+
+router.get('/mine/stats', authRequired, requireFreshRole('writer'), asyncHandler(ctrl.getMyStats));
 
 router.get(
   '/mine/:id',

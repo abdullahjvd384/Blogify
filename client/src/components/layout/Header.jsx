@@ -15,6 +15,7 @@ import {
   Gauge,
   Users,
   Bookmark,
+  Search,
 } from 'lucide-react';
 import { useAuthStore } from '@/stores/authStore';
 import { useLogout } from '@/features/auth/hooks';
@@ -22,6 +23,7 @@ import { useMySubscription } from '@/features/subscription/hooks';
 import { Button } from '@/components/ui/Button';
 import { Logo } from '@/components/ui/Logo';
 import { ThemeToggle } from '@/components/ui/ThemeToggle';
+import { NotificationBell } from '@/components/notifications/NotificationBell';
 import { cn } from '@/lib/cn';
 
 const navItems = [
@@ -154,7 +156,17 @@ export function Header() {
               {usageText}
             </Link>
           )}
+          <Link
+            to="/search"
+            aria-label="Search"
+            className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-slate-600 transition hover:bg-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 dark:text-slate-300 dark:hover:bg-slate-800"
+          >
+            <Search size={18} />
+          </Link>
+
           <ThemeToggle className="hidden sm:inline-flex" />
+
+          {user && <NotificationBell />}
 
           {user ? (
             <div className="relative" data-user-menu>
@@ -248,13 +260,22 @@ export function Header() {
                     Saved articles
                   </Link>
                   {(user.role === 'writer' || user.role === 'admin') && (
-                    <Link
-                      to="/writer/drafts"
-                      className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-800"
-                    >
-                      <PenLine size={15} className="text-slate-400" />
-                      Writer studio
-                    </Link>
+                    <>
+                      <Link
+                        to="/writer/drafts"
+                        className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-800"
+                      >
+                        <PenLine size={15} className="text-slate-400" />
+                        Writer studio
+                      </Link>
+                      <Link
+                        to="/writer/stats"
+                        className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-800"
+                      >
+                        <Gauge size={15} className="text-slate-400" />
+                        Your stats
+                      </Link>
+                    </>
                   )}
                   <Link
                     to="/account/settings"

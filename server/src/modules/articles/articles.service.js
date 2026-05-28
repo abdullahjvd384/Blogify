@@ -3,6 +3,7 @@ import { Article } from '../../models/Article.js';
 import { ArticleVersion } from '../../models/ArticleVersion.js';
 import { Vote } from '../../models/Vote.js';
 import { Follow } from '../../models/Follow.js';
+import { TagFollow } from '../../models/TagFollow.js';
 import { User } from '../../models/User.js';
 import { Subscription } from '../../models/Subscription.js';
 import { uniqueSlug } from '../../utils/slug.js';
@@ -261,6 +262,42 @@ export async function listFollowingFeed(userId, { cursor, limit }) {
 }
 
 /**
+ * Personalized "For You" feed: published articles from authors the user follows
+ * OR carrying tags the user follows, newest first. Falls back to the general
+ * latest feed when the user follows nobody and no tags.
+ */
+export async function listForYou(userId, { cursor, limit }) {
+  const uid = new mongoose.Types.ObjectId(userId);
+  const [follows, tagRows] = await Promise.all([
+    Follow.find({ follower_id: uid }, { following_id: 1 }).lean(),
+    TagFollow.find({ user_id: uid }, { tag: 1 }).lean(),
+  ]);
+  const authorIds = follows.map((f) => f.following_id);
+  const tags = tagRows.map((t) => t.tag);
+
+  if (!authorIds.length && !tags.length) {
+    return listFeed({ cursor, limit });
+  }
+
+  const or = [];
+  if (authorIds.length) or.push({ author_id: { $in: authorIds } });
+  if (tags.length) or.push({ tags: { $in: tags } });
+
+  const filter = { status: 'published', deleted_at: null, $or: or };
+  if (cursor) filter._id = { $lt: new mongoose.Types.ObjectId(cursor) };
+
+  const docs = await Article.find(filter).sort({ _id: -1 }).limit(limit + 1).lean();
+  const hasMore = docs.length > limit;
+  const items = hasMore ? docs.slice(0, limit) : docs;
+  const enriched = await attachAuthors(items);
+  return {
+    items: enriched,
+    cursor: enriched.length ? enriched[enriched.length - 1]._id.toString() : null,
+    hasMore,
+  };
+}
+
+/**
  * Adds an `author` summary ({ id, name, role }) to each article doc. Done in
  * one query rather than $lookup so we can keep the read pipeline simple.
  */
@@ -323,6 +360,49 @@ export async function listMine(authorId, { cursor, limit, status }) {
     items,
     cursor: items.length ? items[items.length - 1]._id.toString() : null,
     hasMore,
+  };
+}
+
+/**
+ * Writer analytics overview. Reads come straight from the denormalized
+ * stats_snapshot on each article, so this is a single cheap query.
+ */
+export async function getWriterStats(authorId) {
+  const uid = new mongoose.Types.ObjectId(authorId);
+  const [docs, user] = await Promise.all([
+    Article.find(
+      { author_id: uid, deleted_at: null },
+      { title: 1, slug: 1, status: 1, stats_snapshot: 1, published_at: 1, estimated_read_minutes: 1 },
+    ).lean(),
+    User.findById(uid, { followers_count: 1 }).lean(),
+  ]);
+
+  const published = docs.filter((d) => d.status === 'published');
+  const totals = { articles: published.length, reads: 0, upvotes: 0, downvotes: 0, comments: 0 };
+  const articles = published
+    .map((d) => {
+      const s = d.stats_snapshot || {};
+      totals.reads += s.reads || 0;
+      totals.upvotes += s.upvotes || 0;
+      totals.downvotes += s.downvotes || 0;
+      totals.comments += s.comments_count || 0;
+      return {
+        id: d._id.toString(),
+        title: d.title,
+        slug: d.slug,
+        publishedAt: d.published_at,
+        readMinutes: d.estimated_read_minutes || 1,
+        reads: s.reads || 0,
+        upvotes: s.upvotes || 0,
+        downvotes: s.downvotes || 0,
+        comments: s.comments_count || 0,
+      };
+    })
+    .sort((a, b) => b.reads - a.reads);
+
+  return {
+    totals: { ...totals, followers: user?.followers_count || 0, drafts: docs.length - published.length },
+    articles,
   };
 }
 

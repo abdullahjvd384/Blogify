@@ -1,6 +1,7 @@
 import mongoose from 'mongoose';
 import { Follow } from '../../models/Follow.js';
 import { User } from '../../models/User.js';
+import { notify } from '../notifications/notifications.service.js';
 import { ConflictError, NotFoundError } from '../../utils/errors.js';
 
 const SUMMARY_FIELDS = { name: 1, username: 1, avatar_url: 1, bio: 1 };
@@ -39,6 +40,8 @@ export async function follow(followerId, targetId) {
     ).lean(),
     User.findByIdAndUpdate(followerId, { $inc: { following_count: 1 } }).lean(),
   ]);
+
+  await notify({ recipientId: targetId, actorId: followerId, type: 'follow' });
 
   return { following: true, followersCount: updatedTarget?.followers_count || 0 };
 }

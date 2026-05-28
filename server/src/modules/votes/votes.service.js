@@ -1,6 +1,7 @@
 import mongoose from 'mongoose';
 import { Vote } from '../../models/Vote.js';
 import { Article } from '../../models/Article.js';
+import { notify } from '../notifications/notifications.service.js';
 import { ConflictError, NotFoundError } from '../../utils/errors.js';
 
 /**
@@ -48,6 +49,16 @@ export async function castVote(userId, articleId, value) {
     { $inc: inc },
     { new: true, projection: { stats_snapshot: 1 } },
   ).lean();
+
+  // Notify the author when their article gains an upvote (not on downvotes).
+  if (value === 1) {
+    await notify({
+      recipientId: article.author_id,
+      actorId: userId,
+      type: 'upvote',
+      articleId: article._id,
+    });
+  }
 
   return { totals: snapshotTotals(updated), myVote: value };
 }

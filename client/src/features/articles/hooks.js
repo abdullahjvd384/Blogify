@@ -28,6 +28,26 @@ export function useFollowingFeed({ limit = 20 } = {}) {
   });
 }
 
+export function useForYouFeed({ limit = 20, enabled = true } = {}) {
+  return useInfiniteQuery({
+    queryKey: ['articles', 'for-you', { limit }],
+    queryFn: ({ pageParam }) =>
+      articlesApi.listForYou({ limit, ...(pageParam ? { cursor: pageParam } : {}) }),
+    initialPageParam: null,
+    getNextPageParam: (last) => (last?.page?.hasMore ? last.page.cursor : undefined),
+    enabled,
+    staleTime: 30_000,
+  });
+}
+
+export function useWriterStats() {
+  return useQuery({
+    queryKey: ['writer', 'stats'],
+    queryFn: articlesApi.myStats,
+    staleTime: 30_000,
+  });
+}
+
 export function useArticle(slug) {
   return useQuery({
     queryKey: ['article', slug],

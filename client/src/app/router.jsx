@@ -17,14 +17,18 @@ import FeedPage from '@/pages/reader/FeedPage';
 import ArticlePage from '@/pages/reader/ArticlePage';
 import ProfilePage from '@/pages/reader/ProfilePage';
 import FollowingFeedPage from '@/pages/reader/FollowingFeedPage';
+import TagPage from '@/pages/reader/TagPage';
+import SearchPage from '@/pages/reader/SearchPage';
 import DraftsPage from '@/pages/writer/DraftsPage';
 import EditorPage from '@/pages/writer/EditorPage';
+import StatsPage from '@/pages/writer/StatsPage';
 import ModerationPage from '@/pages/admin/ModerationPage';
 import UsersPage from '@/pages/admin/UsersPage';
 import PaymentsPage from '@/pages/admin/PaymentsPage';
 import SubscriptionPage from '@/pages/account/SubscriptionPage';
 import SettingsPage from '@/pages/account/SettingsPage';
 import SavedPage from '@/pages/account/SavedPage';
+import NotificationsPage from '@/pages/account/NotificationsPage';
 
 export const router = createBrowserRouter([
   {
@@ -38,6 +42,8 @@ export const router = createBrowserRouter([
       { path: '/articles', element: <FeedPage /> },
       { path: '/articles/:slug', element: <ArticlePage /> },
       { path: '/u/:handle', element: <ProfilePage /> },
+      { path: '/tag/:tag', element: <TagPage /> },
+      { path: '/search', element: <SearchPage /> },
       { path: '/pricing', element: <PricingPage /> },
       { path: '/payments/return', element: <PaymentReturnPage /> },
       { path: '/login', element: <LoginPage /> },
@@ -59,6 +65,7 @@ export const router = createBrowserRouter([
     children: [
       { path: '/writer', element: <Navigate to="/writer/drafts" replace /> },
       { path: '/writer/drafts', element: <DraftsPage /> },
+      { path: '/writer/stats', element: <StatsPage /> },
       { path: '/writer/new', element: <EditorPage /> },
       { path: '/writer/edit/:id', element: <EditorPage /> },
     ],
@@ -78,6 +85,7 @@ export const router = createBrowserRouter([
       { path: '/account/subscription', element: <SubscriptionPage /> },
       { path: '/following', element: <FollowingFeedPage /> },
       { path: '/saved', element: <SavedPage /> },
+      { path: '/notifications', element: <NotificationsPage /> },
     ],
   },
   {

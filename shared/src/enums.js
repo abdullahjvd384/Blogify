@@ -29,6 +29,8 @@ export const CONTENT_FORMATS = Object.freeze(['plain', 'html']);
 
 export const UPLOAD_KINDS = Object.freeze(['cover', 'inline', 'avatar']);
 
+export const NOTIFICATION_TYPES = Object.freeze(['follow', 'comment', 'reply', 'upvote']);
+
 export const ERROR_CODES = Object.freeze({
   VALIDATION_ERROR: 'VALIDATION_ERROR',
   UNAUTHORIZED: 'UNAUTHORIZED',
