@@ -62,7 +62,9 @@ async function processModerationJob(job) {
 
   const result = await moderateArticle({
     title: article.title,
-    content: article.content,
+    // Moderate the readable plaintext, not raw HTML markup. Falls back to the
+    // raw content for legacy rows that predate content_text.
+    content: article.content_text || article.content,
     tags: article.tags,
   });
 

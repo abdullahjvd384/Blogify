@@ -2,6 +2,7 @@ import { api } from '@/lib/api';
 
 export const articlesApi = {
   list: (params = {}) => api.get('/articles', { params }).then((r) => r.data),
+  listFollowing: (params = {}) => api.get('/articles/following', { params }).then((r) => r.data),
   getBySlug: (slug) => api.get(`/articles/${slug}`).then((r) => r.data.data.article),
   listMine: (params = {}) => api.get('/articles/mine', { params }).then((r) => r.data),
   getMineById: (id) => api.get(`/articles/mine/${id}`).then((r) => r.data.data.article),

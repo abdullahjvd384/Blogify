@@ -32,6 +32,13 @@ const envSchema = z.object({
   RESEND_API_KEY: z.string().optional(),
   EMAIL_FROM: z.string().default('Blog Platform <noreply@example.com>'),
 
+  // Cloudinary image hosting. Optional so the app boots without it; the uploads
+  // endpoint throws a clear error if a signature is requested while unset.
+  CLOUDINARY_CLOUD_NAME: z.string().optional(),
+  CLOUDINARY_API_KEY: z.string().optional(),
+  CLOUDINARY_API_SECRET: z.string().optional(),
+  CLOUDINARY_UPLOAD_FOLDER: z.string().default('blog'),
+
   SENTRY_DSN: z.string().optional(),
 });
 

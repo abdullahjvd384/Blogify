@@ -23,6 +23,12 @@ export const PAYMENT_STATUSES = Object.freeze(['pending', 'success', 'failed', '
 
 export const SUBSCRIPTION_STATUSES = Object.freeze(['active', 'past_due', 'canceled', 'expired']);
 
+export const COMMENT_STATUSES = Object.freeze(['visible', 'deleted']);
+
+export const CONTENT_FORMATS = Object.freeze(['plain', 'html']);
+
+export const UPLOAD_KINDS = Object.freeze(['cover', 'inline', 'avatar']);
+
 export const ERROR_CODES = Object.freeze({
   VALIDATION_ERROR: 'VALIDATION_ERROR',
   UNAUTHORIZED: 'UNAUTHORIZED',

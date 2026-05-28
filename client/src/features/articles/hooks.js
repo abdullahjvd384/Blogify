@@ -17,6 +17,17 @@ export function useArticleFeed({ tag, limit = 20 } = {}) {
   });
 }
 
+export function useFollowingFeed({ limit = 20 } = {}) {
+  return useInfiniteQuery({
+    queryKey: ['articles', 'following', { limit }],
+    queryFn: ({ pageParam }) =>
+      articlesApi.listFollowing({ limit, ...(pageParam ? { cursor: pageParam } : {}) }),
+    initialPageParam: null,
+    getNextPageParam: (last) => (last?.page?.hasMore ? last.page.cursor : undefined),
+    staleTime: 30_000,
+  });
+}
+
 export function useArticle(slug) {
   return useQuery({
     queryKey: ['article', slug],

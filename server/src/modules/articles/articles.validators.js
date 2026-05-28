@@ -6,9 +6,13 @@ const tagsSchema = z
   .default([])
   .transform((tags) => Array.from(new Set(tags.map((t) => t.toLowerCase()))));
 
+// Rich HTML (with embeds/images) is much larger than the old plain text. Server
+// sanitization runs after validation, so this is a generous upper bound only.
+const CONTENT_MAX = 200_000;
+
 export const createArticleSchema = z.object({
   title: z.string().trim().min(1).max(200),
-  content: z.string().max(50_000).default(''),
+  content: z.string().max(CONTENT_MAX).default(''),
   excerpt: z.string().trim().max(280).optional(),
   tags: tagsSchema,
   coverImageUrl: z.string().url().max(2048).optional(),
@@ -17,7 +21,7 @@ export const createArticleSchema = z.object({
 export const updateArticleSchema = z
   .object({
     title: z.string().trim().min(1).max(200).optional(),
-    content: z.string().max(50_000).optional(),
+    content: z.string().max(CONTENT_MAX).optional(),
     excerpt: z.string().trim().max(280).optional(),
     tags: tagsSchema.optional(),
     coverImageUrl: z.string().url().max(2048).nullable().optional(),

@@ -16,21 +16,20 @@ import {
   Tag as TagIcon,
 } from 'lucide-react';
 import { useArticle, useVote } from '@/features/articles/hooks';
+import { useIsBookmarked, useToggleBookmark } from '@/features/bookmarks/hooks';
 import { useReadTracker } from '@/features/reads/useReadTracker';
 import { useAuthStore } from '@/stores/authStore';
 import { VoteButtons } from '@/components/VoteButtons';
 import { PaywallModal } from '@/components/PaywallModal';
+import { FollowButton } from '@/components/FollowButton';
+import { Avatar } from '@/components/Avatar';
+import { CommentSection } from '@/components/comments/CommentSection';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { readApiError } from '@/lib/apiError';
+import { profilePath } from '@/lib/profile';
 import { cn } from '@/lib/cn';
-
-function getAuthorInitials(article) {
-  const source = article?.authorName || article?.author?.name || article?.author?.email || 'A';
-  const parts = source.split(/[\s@.]+/).filter(Boolean);
-  return ((parts[0]?.[0] || '') + (parts[1]?.[0] || '')).toUpperCase() || source[0].toUpperCase();
-}
 
 function ArticleSkeleton() {
   return (
@@ -81,7 +80,8 @@ export default function ArticlePage() {
   useReadTracker({ articleId: article?.id, enabled: trackerEnabled });
 
   const [progress, setProgress] = useState(0);
-  const [bookmarked, setBookmarked] = useState(false);
+  const { data: bookmarked = false } = useIsBookmarked(article?.id, Boolean(user && article?.id));
+  const toggleBookmark = useToggleBookmark(article?.id);
 
   useEffect(() => {
     const onScroll = () => {
@@ -290,16 +290,26 @@ export default function ArticlePage() {
 
           <div className="mt-8 flex flex-wrap items-center gap-x-4 gap-y-3 border-t border-slate-200 pt-6 dark:border-slate-800">
             <div className="flex items-center gap-3">
-              <span
-                className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-brand-500 to-accent-500 text-sm font-semibold text-white shadow-soft"
-                aria-hidden
-              >
-                {getAuthorInitials(article)}
-              </span>
+              {article.author ? (
+                <Link to={profilePath(article.author)}>
+                  <Avatar user={article.author} size="md" />
+                </Link>
+              ) : (
+                <Avatar user={{ name: authorName }} size="md" />
+              )}
               <div>
-                <p className="text-sm font-semibold text-slate-900 dark:text-slate-50">
-                  {authorName}
-                </p>
+                {article.author ? (
+                  <Link
+                    to={profilePath(article.author)}
+                    className="text-sm font-semibold text-slate-900 hover:text-brand-600 dark:text-slate-50 dark:hover:text-brand-300"
+                  >
+                    {authorName}
+                  </Link>
+                ) : (
+                  <p className="text-sm font-semibold text-slate-900 dark:text-slate-50">
+                    {authorName}
+                  </p>
+                )}
                 {date && (
                   <p className="flex items-center gap-1 text-xs text-slate-500 dark:text-slate-400">
                     <Calendar size={11} />
@@ -311,6 +321,13 @@ export default function ArticlePage() {
                   </p>
                 )}
               </div>
+              {article.author && (
+                <FollowButton
+                  handle={article.author.username || article.author.id}
+                  size="sm"
+                  className="ml-1"
+                />
+              )}
             </div>
 
             <span className="hidden h-6 w-px bg-slate-200 dark:bg-slate-800 sm:inline-block" />
@@ -329,14 +346,20 @@ export default function ArticlePage() {
             <div className="ml-auto flex items-center gap-1">
               <button
                 type="button"
-                onClick={() => setBookmarked((v) => !v)}
+                onClick={() => {
+                  if (!user) {
+                    toast.info('Sign in to save articles');
+                    return;
+                  }
+                  toggleBookmark.mutate(bookmarked);
+                }}
                 className={cn(
                   'inline-flex h-9 w-9 items-center justify-center rounded-lg ring-1 ring-inset transition',
                   bookmarked
                     ? 'bg-amber-50 text-amber-600 ring-amber-200 dark:bg-amber-950/60 dark:text-amber-300 dark:ring-amber-900'
                     : 'text-slate-500 ring-slate-200 hover:bg-slate-50 hover:text-slate-900 dark:text-slate-400 dark:ring-slate-800 dark:hover:bg-slate-800 dark:hover:text-slate-100',
                 )}
-                aria-label="Bookmark"
+                aria-label={bookmarked ? 'Remove bookmark' : 'Save article'}
               >
                 <Bookmark size={15} fill={bookmarked ? 'currentColor' : 'none'} />
               </button>
@@ -377,24 +400,46 @@ export default function ArticlePage() {
 
       {/* Body */}
       <article className="mx-auto max-w-3xl px-4 pb-20 pt-10 sm:px-6 sm:pb-28 lg:px-8">
-        <div className="article-body whitespace-pre-wrap font-serif text-[1.075rem] leading-[1.85] text-slate-700 dark:text-slate-300">
-          {article.content}
-        </div>
+        {article.contentFormat === 'html' ? (
+          <div
+            className="article-body font-serif text-[1.075rem] leading-[1.85] text-slate-700 dark:text-slate-300"
+            // Content is sanitized server-side on save (allowlist + iframe host check).
+            dangerouslySetInnerHTML={{ __html: article.content }}
+          />
+        ) : (
+          <div className="article-body whitespace-pre-wrap font-serif text-[1.075rem] leading-[1.85] text-slate-700 dark:text-slate-300">
+            {article.content}
+          </div>
+        )}
 
         {/* Footer engagement */}
         <div className="mt-14 flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-slate-200 bg-slate-50/60 p-5 dark:border-slate-800 dark:bg-slate-900/40">
           <div className="flex items-center gap-3">
-            <span className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-brand-500 to-accent-500 text-sm font-semibold text-white">
-              {getAuthorInitials(article)}
-            </span>
+            {article.author ? (
+              <Link to={profilePath(article.author)}>
+                <Avatar user={article.author} size="md" />
+              </Link>
+            ) : (
+              <Avatar user={{ name: authorName }} size="md" />
+            )}
             <div>
               <p className="text-sm font-semibold text-slate-900 dark:text-slate-50">
-                Written by {authorName}
+                Written by{' '}
+                {article.author ? (
+                  <Link to={profilePath(article.author)} className="hover:text-brand-600 dark:hover:text-brand-300">
+                    {authorName}
+                  </Link>
+                ) : (
+                  authorName
+                )}
               </p>
               <p className="text-xs text-slate-500 dark:text-slate-400">
                 Enjoyed this read? Tap upvote or share it with a friend.
               </p>
             </div>
+            {article.author && (
+              <FollowButton handle={article.author.username || article.author.id} size="sm" className="ml-1" />
+            )}
           </div>
           <div className="flex items-center gap-2">
             <VoteButtons
@@ -410,6 +455,9 @@ export default function ArticlePage() {
             </Button>
           </div>
         </div>
+
+        {/* Responses */}
+        <CommentSection articleId={article.id} count={stats.commentsCount || 0} />
       </article>
     </div>
   );

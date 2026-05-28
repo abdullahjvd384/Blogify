@@ -7,6 +7,10 @@ import { adminUsersRouter } from './modules/users/users.routes.js';
 import { subscriptionsRouter } from './modules/subscriptions/subscriptions.routes.js';
 import { readsRouter } from './modules/reads/reads.routes.js';
 import { paymentsRouter, adminPaymentsRouter } from './modules/payments/payments.routes.js';
+import { uploadsRouter } from './modules/uploads/uploads.routes.js';
+import { profilesRouter } from './modules/profiles/profiles.routes.js';
+import { usersPublicRouter } from './modules/follows/follows.routes.js';
+import { bookmarksRouter } from './modules/bookmarks/bookmarks.routes.js';
 
 /** Mounts all v1 sub-routers. New modules add their router here. */
 export function buildRouter() {
@@ -16,6 +20,10 @@ export function buildRouter() {
   api.use('/articles', articlesRouter);
   api.use('/subscriptions', subscriptionsRouter);
   api.use('/reads', readsRouter);
+  api.use('/uploads', uploadsRouter);
+  api.use('/profiles', profilesRouter);
+  api.use('/users', usersPublicRouter);
+  api.use('/me/bookmarks', bookmarksRouter);
   api.use('/payments', paymentsRouter);
   api.use('/admin/moderation', moderationRouter);
   api.use('/admin/users', adminUsersRouter);

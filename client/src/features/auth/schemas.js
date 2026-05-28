@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { USERNAME_RULES, PROFILE_LIMITS } from '@blogplatform/shared';
 
 export const loginFormSchema = z.object({
   email: z.string().email('Enter a valid email').toLowerCase(),
@@ -27,6 +28,14 @@ export const resetPasswordFormSchema = z
 
 export const profileFormSchema = z.object({
   name: z.string().trim().min(1, 'Name is required').max(80),
+  username: z
+    .string()
+    .trim()
+    .toLowerCase()
+    .min(USERNAME_RULES.MIN, `At least ${USERNAME_RULES.MIN} characters`)
+    .max(USERNAME_RULES.MAX, `At most ${USERNAME_RULES.MAX} characters`)
+    .regex(new RegExp(USERNAME_RULES.PATTERN), 'Use lowercase letters, numbers, - and _'),
+  bio: z.string().trim().max(PROFILE_LIMITS.BIO_MAX, `Keep it under ${PROFILE_LIMITS.BIO_MAX} characters`),
   timezone: z.string().trim().min(1, 'Timezone is required').max(64),
 });
 

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { toast } from 'sonner';
@@ -13,6 +13,9 @@ import {
   Save,
   MailCheck,
   AlertTriangle,
+  AtSign,
+  Camera,
+  Loader2,
 } from 'lucide-react';
 import { useAuthStore } from '@/stores/authStore';
 import {
@@ -20,10 +23,12 @@ import {
   useChangePassword,
   useResendVerification,
 } from '@/features/auth/hooks';
+import { useUploadImage } from '@/features/uploads/hooks';
 import {
   profileFormSchema,
   changePasswordFormSchema,
 } from '@/features/auth/schemas';
+import { Avatar } from '@/components/Avatar';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Field } from '@/components/ui/Field';
@@ -70,12 +75,14 @@ export default function SettingsPage() {
   const update = useUpdateProfile();
   const changePw = useChangePassword();
   const resend = useResendVerification();
+  const uploadAvatar = useUploadImage();
+  const avatarInputRef = useRef(null);
   const [showCur, setShowCur] = useState(false);
   const [showNew, setShowNew] = useState(false);
 
   const profile = useForm({
     resolver: zodResolver(profileFormSchema),
-    defaultValues: { name: '', timezone: 'Asia/Karachi' },
+    defaultValues: { name: '', username: '', bio: '', timezone: 'Asia/Karachi' },
   });
 
   const pwd = useForm({
@@ -85,12 +92,30 @@ export default function SettingsPage() {
 
   useEffect(() => {
     if (user) {
-      profile.reset({ name: user.name || '', timezone: user.timezone || 'Asia/Karachi' });
+      profile.reset({
+        name: user.name || '',
+        username: user.username || '',
+        bio: user.bio || '',
+        timezone: user.timezone || 'Asia/Karachi',
+      });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id]);
 
   if (!user) return null;
+
+  async function onPickAvatar(e) {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+    try {
+      const url = await uploadAvatar.mutateAsync({ file, kind: 'avatar' });
+      await update.mutateAsync({ avatarUrl: url });
+      toast.success('Profile photo updated');
+    } catch (err) {
+      toast.error(readApiError(err) || err.message);
+    }
+  }
 
   async function onSaveProfile(values) {
     try {
@@ -170,8 +195,31 @@ export default function SettingsPage() {
         <Section
           icon={UserIcon}
           title="Profile"
-          description="Your display name and timezone (used to bucket your daily read quota)."
+          description="Your public identity — photo, name, handle, and bio appear on your author profile."
         >
+          <div className="mb-5 flex items-center gap-4">
+            <Avatar user={user} size="lg" />
+            <div>
+              <Button
+                type="button"
+                variant="secondary"
+                size="sm"
+                leftIcon={uploadAvatar.isPending || update.isPending ? <Loader2 className="animate-spin" /> : <Camera />}
+                onClick={() => avatarInputRef.current?.click()}
+                disabled={uploadAvatar.isPending || update.isPending}
+              >
+                {user.avatarUrl ? 'Change photo' : 'Upload photo'}
+              </Button>
+              <p className="mt-1 text-xs text-slate-400">JPG, PNG, WEBP or GIF · up to 5MB</p>
+              <input
+                ref={avatarInputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={onPickAvatar}
+              />
+            </div>
+          </div>
           <form onSubmit={profile.handleSubmit(onSaveProfile)} className="space-y-4" noValidate>
             <Field label="Full name" htmlFor="name" error={profile.formState.errors.name?.message}>
               <Input
@@ -180,6 +228,30 @@ export default function SettingsPage() {
                 leftIcon={<UserIcon />}
                 error={!!profile.formState.errors.name}
                 {...profile.register('name')}
+              />
+            </Field>
+            <Field
+              label="Username"
+              htmlFor="username"
+              hint="Your profile lives at /u/your-handle"
+              error={profile.formState.errors.username?.message}
+            >
+              <Input
+                id="username"
+                autoComplete="off"
+                leftIcon={<AtSign />}
+                error={!!profile.formState.errors.username}
+                {...profile.register('username')}
+              />
+            </Field>
+            <Field label="Bio" htmlFor="bio" error={profile.formState.errors.bio?.message}>
+              <textarea
+                id="bio"
+                rows={3}
+                maxLength={280}
+                placeholder="A sentence or two about you and what you write."
+                className="block w-full resize-none rounded-lg border border-slate-200 bg-white px-3.5 py-2 text-sm shadow-soft transition focus:border-brand-500 focus:outline-none focus:ring-4 focus:ring-brand-500/15 dark:border-slate-800 dark:bg-slate-900/70 dark:text-slate-100"
+                {...profile.register('bio')}
               />
             </Field>
             <Field label="Timezone" htmlFor="timezone" error={profile.formState.errors.timezone?.message}>

@@ -20,7 +20,7 @@
     "lint": "eslint .",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "db:seed": "node scripts/seed.js",
+    "db:seed": "node --env-file=server/.env scripts/seed.js",
     "db:sync-indexes": "node scripts/sync-indexes.js",
     "prepare": "husky || true"
   },

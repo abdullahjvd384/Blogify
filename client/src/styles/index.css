@@ -237,6 +237,40 @@
     box-shadow: theme('boxShadow.card');
     margin: 1.4em 0;
   }
+
+  /* Embedded video (YouTube) — responsive 16:9 */
+  .article-body iframe {
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    height: auto;
+    border: 0;
+    border-radius: 0.75rem;
+    margin: 1.4em 0;
+  }
+  .article-body div[data-youtube-video] {
+    margin: 1.4em 0;
+  }
+  .article-body div[data-youtube-video] iframe {
+    margin: 0;
+  }
+
+  /* TipTap editor: placeholder + selection/caret polish */
+  .ProseMirror:focus {
+    outline: none;
+  }
+  .ProseMirror p.is-editor-empty:first-child::before {
+    content: attr(data-placeholder);
+    float: left;
+    height: 0;
+    pointer-events: none;
+    color: theme('colors.slate.400');
+  }
+  .dark .ProseMirror p.is-editor-empty:first-child::before {
+    color: theme('colors.slate.500');
+  }
+  .ProseMirror img.ProseMirror-selectednode {
+    outline: 2px solid theme('colors.brand.500');
+  }
 }
 
 @layer utilities {

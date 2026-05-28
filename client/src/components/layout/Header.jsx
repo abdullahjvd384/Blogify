@@ -13,6 +13,8 @@ import {
   Sparkles,
   CreditCard,
   Gauge,
+  Users,
+  Bookmark,
 } from 'lucide-react';
 import { useAuthStore } from '@/stores/authStore';
 import { useLogout } from '@/features/auth/hooks';
@@ -24,6 +26,7 @@ import { cn } from '@/lib/cn';
 
 const navItems = [
   { to: '/articles', label: 'Read', icon: BookOpen },
+  { to: '/following', label: 'Following', icon: Users, requiresAuth: true },
   { to: '/pricing', label: 'Pricing', icon: Sparkles },
   { to: '/writer', label: 'Write', icon: PenLine, requiresRole: 'writer' },
   { to: '/admin', label: 'Admin', icon: Shield, requiresRole: 'admin' },
@@ -224,11 +227,25 @@ export function Header() {
                   <div className="my-2 h-px bg-slate-200 dark:bg-slate-800" />
 
                   <Link
+                    to={`/u/${user.username || user.id}`}
+                    className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-800"
+                  >
+                    <UserIcon size={15} className="text-slate-400" />
+                    Your profile
+                  </Link>
+                  <Link
                     to="/articles"
                     className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-800"
                   >
                     <BookOpen size={15} className="text-slate-400" />
                     Browse articles
+                  </Link>
+                  <Link
+                    to="/saved"
+                    className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-800"
+                  >
+                    <Bookmark size={15} className="text-slate-400" />
+                    Saved articles
                   </Link>
                   {(user.role === 'writer' || user.role === 'admin') && (
                     <Link

@@ -1,7 +1,8 @@
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Clock, Eye, ArrowUpRight, ArrowBigUp, ArrowBigDown } from 'lucide-react';
 import { Badge } from '@/components/ui/Badge';
 import { cn } from '@/lib/cn';
+import { profilePath } from '@/lib/profile';
 
 function gradientFor(seed = '') {
   const palettes = [
@@ -26,6 +27,7 @@ function getAuthorInitials(article) {
 }
 
 export function ArticleCard({ article, variant = 'default' }) {
+  const navigate = useNavigate();
   const grad = gradientFor(article.slug || article.title);
   const tags = (article.tags || []).slice(0, 3);
   const stats = article.statsSnapshot || {};
@@ -33,6 +35,15 @@ export function ArticleCard({ article, variant = 'default' }) {
   const score = (stats.upvotes || 0) - (stats.downvotes || 0);
   const date = article.publishedAt || article.createdAt;
   const authorName = article.authorName || article.author?.name || 'Anonymous';
+
+  // The whole card is a <Link>; nesting another <Link> for the author is invalid,
+  // so intercept the click and navigate manually.
+  function goToAuthor(e) {
+    if (!article.author) return;
+    e.preventDefault();
+    e.stopPropagation();
+    navigate(profilePath(article.author));
+  }
 
   return (
     <Link
@@ -92,18 +103,34 @@ export function ArticleCard({ article, variant = 'default' }) {
         )}
 
         <div className="mt-auto flex items-center justify-between gap-3 pt-2">
-          <div className="flex min-w-0 items-center gap-2.5">
+          <div
+            className={cn(
+              'flex min-w-0 items-center gap-2.5',
+              article.author && 'cursor-pointer',
+            )}
+            onClick={goToAuthor}
+            role={article.author ? 'link' : undefined}
+          >
             <span
               className={cn(
-                'inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gradient-to-br text-[11px] font-semibold text-white shadow-soft',
+                'inline-flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full bg-gradient-to-br text-[11px] font-semibold text-white shadow-soft',
                 grad,
               )}
               aria-hidden
             >
-              {getAuthorInitials(article)}
+              {article.author?.avatarUrl ? (
+                <img
+                  src={article.author.avatarUrl}
+                  alt=""
+                  className="h-full w-full object-cover"
+                  loading="lazy"
+                />
+              ) : (
+                getAuthorInitials(article)
+              )}
             </span>
             <div className="min-w-0">
-              <p className="truncate text-xs font-medium text-slate-700 dark:text-slate-300">
+              <p className="truncate text-xs font-medium text-slate-700 hover:text-brand-600 dark:text-slate-300 dark:hover:text-brand-300">
                 {authorName}
               </p>
               {date && (

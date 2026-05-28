@@ -3,9 +3,10 @@ import { User } from '../../models/User.js';
 import { RefreshToken } from '../../models/RefreshToken.js';
 import { Subscription } from '../../models/Subscription.js';
 import { EmailToken } from '../../models/EmailToken.js';
-import { DEFAULT_PLAN } from '@blogplatform/shared';
+import { DEFAULT_PLAN, USERNAME_RULES } from '@blogplatform/shared';
 import { env } from '../../config/env.js';
 import { logger } from '../../config/logger.js';
+import { slugify, slugSuffix } from '../../utils/slug.js';
 import {
   ConflictError,
   NotFoundError,
@@ -33,6 +34,22 @@ const PASSWORD_RESET_TTL_MS = 60 * 60 * 1000; // 1 hour
 const BCRYPT_COST = 12;
 
 /**
+ * Allocates a unique, URL-safe handle from a display name, e.g. "Jane Doe" → "jane-doe".
+ * Leaves room under the 30-char cap for a collision suffix. The unique index is the
+ * real guarantee; this only reduces the odds of a create-time collision.
+ */
+export async function allocateUsername(name) {
+  const root = (slugify(name) || 'user').slice(0, 20).replace(/-+$/, '') || 'user';
+  const padded = root.length >= USERNAME_RULES.MIN ? root : `${root}-user`.slice(0, 20);
+  const candidates = [padded];
+  for (let i = 0; i < 5; i++) candidates.push(`${padded}-${slugSuffix()}`.slice(0, USERNAME_RULES.MAX));
+  for (const candidate of candidates) {
+    if (!(await User.exists({ username: candidate }))) return candidate;
+  }
+  return `user-${slugSuffix(5)}`;
+}
+
+/**
  * Creates a new user (default role: reader) and returns a fresh token pair.
  * Throws ConflictError on duplicate email.
  *
@@ -44,14 +61,26 @@ export async function signup(input, ctx = {}) {
   if (exists) throw new ConflictError('Email already registered');
 
   const passwordHash = await bcrypt.hash(input.password, BCRYPT_COST);
-  const user = await User.create({
-    email: input.email,
-    password_hash: passwordHash,
-    name: input.name,
-    timezone: input.timezone || 'Asia/Karachi',
-    role: 'writer',
-    status: 'active',
-  });
+  let user;
+  for (let attempt = 0; attempt < 3; attempt++) {
+    try {
+      user = await User.create({
+        email: input.email,
+        password_hash: passwordHash,
+        name: input.name,
+        username: await allocateUsername(input.name),
+        timezone: input.timezone || 'Asia/Karachi',
+        role: 'writer',
+        status: 'active',
+      });
+      break;
+    } catch (err) {
+      // Retry only on a username race (email dupe was checked above and is terminal).
+      if (err?.code === 11000 && err?.keyPattern?.username) continue;
+      throw err;
+    }
+  }
+  if (!user) throw new ConflictError('Could not allocate a unique username, please retry');
 
   // Subscription is enforced as 1:1 — every user gets a free plan at signup so
   // downstream code (quota middleware, subscriptions/me) can assume one exists.
@@ -239,7 +268,24 @@ export async function updateProfile(userId, patch) {
   if (!user) throw new NotFoundError('User not found');
   if (patch.name !== undefined) user.name = patch.name;
   if (patch.timezone !== undefined) user.timezone = patch.timezone;
-  await user.save();
+  if (patch.bio !== undefined) user.bio = patch.bio;
+  if (patch.avatarUrl !== undefined) user.avatar_url = patch.avatarUrl;
+  if (patch.username !== undefined) {
+    const next = patch.username.toLowerCase();
+    if (next !== user.username) {
+      const taken = await User.exists({ username: next, _id: { $ne: user._id } });
+      if (taken) throw new ConflictError('That username is already taken');
+      user.username = next;
+    }
+  }
+  try {
+    await user.save();
+  } catch (err) {
+    if (err?.code === 11000 && err?.keyPattern?.username) {
+      throw new ConflictError('That username is already taken');
+    }
+    throw err;
+  }
   return user.toObject();
 }
 

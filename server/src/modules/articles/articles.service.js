@@ -2,9 +2,12 @@ import mongoose from 'mongoose';
 import { Article } from '../../models/Article.js';
 import { ArticleVersion } from '../../models/ArticleVersion.js';
 import { Vote } from '../../models/Vote.js';
+import { Follow } from '../../models/Follow.js';
 import { User } from '../../models/User.js';
 import { Subscription } from '../../models/Subscription.js';
 import { uniqueSlug } from '../../utils/slug.js';
+import { sanitizeArticleHtml } from '../../utils/sanitizeHtml.js';
+import { htmlToText } from '../../utils/htmlToText.js';
 import { enqueueModeration } from '../../queues/moderation.js';
 import { consumeRead } from '../../services/quota.js';
 import { DEFAULT_PLAN } from '@blogplatform/shared';
@@ -19,20 +22,28 @@ import {
 
 const WORDS_PER_MINUTE = 220;
 
-function computeReadStats(content = '') {
-  const words = content.trim() ? content.trim().split(/\s+/).length : 0;
+function computeReadStats(text = '') {
+  const words = text.trim() ? text.trim().split(/\s+/).length : 0;
   return {
     word_count: words,
     estimated_read_minutes: Math.max(1, Math.ceil(words / WORDS_PER_MINUTE)),
   };
 }
 
-function autoExcerpt(content = '') {
-  return content
-    .replace(/<[^>]*>/g, ' ')
-    .replace(/\s+/g, ' ')
-    .trim()
-    .slice(0, 280);
+function autoExcerpt(text = '') {
+  return text.replace(/\s+/g, ' ').trim().slice(0, 280);
+}
+
+/**
+ * Normalizes incoming rich-text content for storage: sanitizes the HTML (the
+ * security boundary), derives cached plaintext for excerpt/word-count/moderation,
+ * and computes read stats. Content is always stored as sanitized HTML going
+ * forward (content_format 'html'); legacy 'plain' rows render untouched.
+ */
+function processContent(rawContent = '') {
+  const html = sanitizeArticleHtml(rawContent || '');
+  const text = htmlToText(html);
+  return { html, text, stats: computeReadStats(text) };
 }
 
 async function slugExists(candidate) {
@@ -45,14 +56,16 @@ async function slugExists(candidate) {
  */
 export async function createDraft(authorId, input) {
   const slug = await uniqueSlug(input.title, slugExists);
-  const stats = computeReadStats(input.content);
+  const { html, text, stats } = processContent(input.content || '');
 
   const doc = await Article.create({
     author_id: authorId,
     title: input.title,
     slug,
-    content: input.content || '',
-    excerpt: input.excerpt || autoExcerpt(input.content || ''),
+    content: html,
+    content_format: 'html',
+    content_text: text,
+    excerpt: input.excerpt || autoExcerpt(text),
     cover_image_url: input.coverImageUrl ?? null,
     tags: input.tags || [],
     status: 'draft',
@@ -79,12 +92,14 @@ export async function updateArticle(articleId, actor, patch) {
     );
   }
   if (patch.content !== undefined) {
-    article.content = patch.content;
-    const stats = computeReadStats(patch.content);
+    const { html, text, stats } = processContent(patch.content);
+    article.content = html;
+    article.content_format = 'html';
+    article.content_text = text;
     article.word_count = stats.word_count;
     article.estimated_read_minutes = stats.estimated_read_minutes;
     if (!patch.excerpt && !article.excerpt) {
-      article.excerpt = autoExcerpt(patch.content);
+      article.excerpt = autoExcerpt(text);
     }
   }
   if (patch.excerpt !== undefined) article.excerpt = patch.excerpt;
@@ -135,7 +150,8 @@ export async function submitForReview(articleId, actor) {
   if (article.status !== 'draft' && article.status !== 'rejected') {
     throw new ConflictError(`Cannot submit from status: ${article.status}`);
   }
-  if (!article.content?.trim()) throw new ValidationError('Article has no content');
+  const bodyText = article.content_text?.trim() || htmlToText(article.content).trim();
+  if (!bodyText) throw new ValidationError('Article has no content');
   article.status = 'submitted';
   await article.save();
 
@@ -219,19 +235,56 @@ export async function listFeed({ cursor, limit, tag, authorId }) {
 }
 
 /**
+ * Feed of published articles from authors the user follows, newest first.
+ * Returns an empty page when the user follows nobody.
+ */
+export async function listFollowingFeed(userId, { cursor, limit }) {
+  const edges = await Follow.find(
+    { follower_id: new mongoose.Types.ObjectId(userId) },
+    { following_id: 1 },
+  ).lean();
+  if (!edges.length) return { items: [], cursor: null, hasMore: false };
+
+  const authorIds = edges.map((e) => e.following_id);
+  const filter = { status: 'published', deleted_at: null, author_id: { $in: authorIds } };
+  if (cursor) filter._id = { $lt: new mongoose.Types.ObjectId(cursor) };
+
+  const docs = await Article.find(filter).sort({ _id: -1 }).limit(limit + 1).lean();
+  const hasMore = docs.length > limit;
+  const items = hasMore ? docs.slice(0, limit) : docs;
+  const enriched = await attachAuthors(items);
+  return {
+    items: enriched,
+    cursor: enriched.length ? enriched[enriched.length - 1]._id.toString() : null,
+    hasMore,
+  };
+}
+
+/**
  * Adds an `author` summary ({ id, name, role }) to each article doc. Done in
  * one query rather than $lookup so we can keep the read pipeline simple.
  */
-async function attachAuthors(docs) {
+export async function attachAuthors(docs) {
   if (!docs.length) return docs;
   const ids = [...new Set(docs.map((d) => d.author_id.toString()))];
-  const users = await User.find({ _id: { $in: ids } }, { name: 1, role: 1 }).lean();
+  const users = await User.find(
+    { _id: { $in: ids } },
+    { name: 1, role: 1, username: 1, avatar_url: 1 },
+  ).lean();
   const byId = new Map(users.map((u) => [u._id.toString(), u]));
   return docs.map((d) => {
     const u = byId.get(d.author_id.toString());
     return {
       ...d,
-      author: u ? { id: u._id.toString(), name: u.name, role: u.role } : null,
+      author: u
+        ? {
+            id: u._id.toString(),
+            name: u.name,
+            role: u.role,
+            username: u.username || null,
+            avatarUrl: u.avatar_url || null,
+          }
+        : null,
     };
   });
 }

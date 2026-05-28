@@ -15,6 +15,8 @@ import PaymentReturnPage from '@/pages/public/PaymentReturnPage';
 import NotFoundPage from '@/pages/public/NotFoundPage';
 import FeedPage from '@/pages/reader/FeedPage';
 import ArticlePage from '@/pages/reader/ArticlePage';
+import ProfilePage from '@/pages/reader/ProfilePage';
+import FollowingFeedPage from '@/pages/reader/FollowingFeedPage';
 import DraftsPage from '@/pages/writer/DraftsPage';
 import EditorPage from '@/pages/writer/EditorPage';
 import ModerationPage from '@/pages/admin/ModerationPage';
@@ -22,6 +24,7 @@ import UsersPage from '@/pages/admin/UsersPage';
 import PaymentsPage from '@/pages/admin/PaymentsPage';
 import SubscriptionPage from '@/pages/account/SubscriptionPage';
 import SettingsPage from '@/pages/account/SettingsPage';
+import SavedPage from '@/pages/account/SavedPage';
 
 export const router = createBrowserRouter([
   {
@@ -34,6 +37,7 @@ export const router = createBrowserRouter([
       { path: '/', element: <HomePage /> },
       { path: '/articles', element: <FeedPage /> },
       { path: '/articles/:slug', element: <ArticlePage /> },
+      { path: '/u/:handle', element: <ProfilePage /> },
       { path: '/pricing', element: <PricingPage /> },
       { path: '/payments/return', element: <PaymentReturnPage /> },
       { path: '/login', element: <LoginPage /> },
@@ -72,6 +76,8 @@ export const router = createBrowserRouter([
       { path: '/account', element: <Navigate to="/account/settings" replace /> },
       { path: '/account/settings', element: <SettingsPage /> },
       { path: '/account/subscription', element: <SubscriptionPage /> },
+      { path: '/following', element: <FollowingFeedPage /> },
+      { path: '/saved', element: <SavedPage /> },
     ],
   },
   {

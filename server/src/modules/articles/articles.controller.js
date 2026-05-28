@@ -34,6 +34,11 @@ export async function listFeed(req, res) {
   return res.json({ data: presentMany(items), page: { cursor, hasMore } });
 }
 
+export async function listFollowingFeed(req, res) {
+  const { items, cursor, hasMore } = await service.listFollowingFeed(req.user.id, req.valid.query);
+  return res.json({ data: presentMany(items), page: { cursor, hasMore } });
+}
+
 export async function listMine(req, res) {
   const { items, cursor, hasMore } = await service.listMine(req.user.id, req.valid.query);
   return res.json({ data: presentMany(items), page: { cursor, hasMore } });

@@ -13,11 +13,18 @@ import {
 } from './articles.validators.js';
 import * as ctrl from './articles.controller.js';
 import { votesRouter } from '../votes/votes.routes.js';
+import { commentsRouter } from '../comments/comments.routes.js';
 
 const router = Router();
 
-// Listing endpoints first so /mine doesn't get swallowed by /:slug.
+// Listing endpoints first so /mine and /following don't get swallowed by /:slug.
 router.get('/', validate(feedQuerySchema, 'query'), asyncHandler(ctrl.listFeed));
+router.get(
+  '/following',
+  authRequired,
+  validate(feedQuerySchema, 'query'),
+  asyncHandler(ctrl.listFollowingFeed),
+);
 router.get(
   '/mine',
   authRequired,
@@ -73,5 +80,6 @@ router.post(
 );
 
 router.use('/:id/vote', votesRouter);
+router.use('/:id/comments', commentsRouter);
 
 export { router as articlesRouter };

@@ -27,3 +27,21 @@ export const TOKEN_TTL = Object.freeze({
 });
 
 export const API_PREFIX = '/api/v1';
+
+/** Username/handle rules (used for profile URLs like /u/:username). */
+export const USERNAME_RULES = Object.freeze({
+  MIN: 3,
+  MAX: 30,
+  PATTERN: '^[a-z0-9_-]+$',
+});
+
+/** Comment/response limits. MAX_DEPTH 1 = one level of nesting (Medium-style responses). */
+export const COMMENT_LIMITS = Object.freeze({
+  MAX_BODY: 2000,
+  MAX_DEPTH: 1,
+});
+
+/** Profile bio limit. */
+export const PROFILE_LIMITS = Object.freeze({
+  BIO_MAX: 280,
+});

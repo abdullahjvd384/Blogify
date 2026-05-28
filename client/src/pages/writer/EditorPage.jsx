@@ -11,7 +11,6 @@ import {
   FileText,
   CheckCircle2,
   Loader2,
-  Image as ImageIcon,
   Type,
   Pencil,
 } from 'lucide-react';
@@ -28,9 +27,23 @@ import { Field } from '@/components/ui/Field';
 import { TagInput } from '@/components/ui/TagInput';
 import { Badge } from '@/components/ui/Badge';
 import { StatusBadge } from '@/components/StatusBadge';
+import { RichTextEditor } from '@/components/editor/RichTextEditor';
+import { CoverImageUploader } from '@/components/editor/CoverImageUploader';
 import { useDebouncedValue } from '@/lib/useDebouncedValue';
 import { readApiError } from '@/lib/apiError';
 import { cn } from '@/lib/cn';
+
+/** Escapes plain text and wraps paragraphs in <p> so legacy drafts load into TipTap cleanly. */
+function plainToHtml(text = '') {
+  if (!text) return '';
+  if (/<[a-z][\s\S]*>/i.test(text)) return text; // already looks like HTML
+  const esc = (s) =>
+    s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  return text
+    .split(/\n{2,}/)
+    .map((para) => `<p>${esc(para).replace(/\n/g, '<br>')}</p>`)
+    .join('');
+}
 
 const EDITABLE_STATUSES = new Set(['draft', 'rejected', 'needs_review']);
 
@@ -47,6 +60,7 @@ export default function EditorPage() {
 
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
+  const [contentText, setContentText] = useState('');
   const [excerpt, setExcerpt] = useState('');
   const [tags, setTags] = useState([]);
   const [coverUrl, setCoverUrl] = useState('');
@@ -59,7 +73,9 @@ export default function EditorPage() {
       const a = loaded.data;
       setServerArticle(a);
       setTitle(a.title || '');
-      setContent(a.content || '');
+      // Legacy plain-text drafts are wrapped into paragraphs so they load cleanly.
+      setContent(a.contentFormat === 'html' ? a.content || '' : plainToHtml(a.content || ''));
+      setContentText(a.contentText || a.content || '');
       setExcerpt(a.excerpt || '');
       setTags(a.tags || []);
       setCoverUrl(a.coverImageUrl || '');
@@ -76,11 +92,11 @@ export default function EditorPage() {
   const editable = !serverArticle || EDITABLE_STATUSES.has(status);
 
   const wordCount = useMemo(
-    () => (content.trim() ? content.trim().split(/\s+/).length : 0),
-    [content],
+    () => (contentText.trim() ? contentText.trim().split(/\s+/).length : 0),
+    [contentText],
   );
   const readMinutes = Math.max(1, Math.round(wordCount / 200));
-  const charCount = content.length;
+  const charCount = contentText.length;
 
   const debouncedTitle = useDebouncedValue(title, 800);
   const debouncedContent = useDebouncedValue(content, 800);
@@ -89,17 +105,12 @@ export default function EditorPage() {
   const debouncedCover = useDebouncedValue(coverUrl, 800);
 
   const dirtyRef = useRef(false);
-
-  useEffect(() => {
-    if (!serverArticle) return;
-    const same =
-      title === (serverArticle.title || '') &&
-      content === (serverArticle.content || '') &&
-      excerpt === (serverArticle.excerpt || '') &&
-      arraysEqual(tags, serverArticle.tags || []) &&
-      coverUrl === (serverArticle.coverImageUrl || '');
-    dirtyRef.current = !same;
-  }, [title, content, excerpt, tags, coverUrl, serverArticle]);
+  // Edit-driven dirty flag: only true after a real user edit. We avoid comparing
+  // TipTap's HTML against the server's sanitized HTML, which can differ harmlessly
+  // (e.g. <br> vs <br />) and would otherwise cause an autosave loop.
+  const markDirty = () => {
+    dirtyRef.current = true;
+  };
 
   useEffect(() => {
     if (!serverArticle?.id || !editable || !dirtyRef.current) return;
@@ -139,6 +150,7 @@ export default function EditorPage() {
         toast.success('Draft saved');
         setServerArticle(created);
         setSavedAt(new Date());
+        dirtyRef.current = false;
         navigate(`/writer/edit/${created.id}`, { replace: true });
       } catch (err) {
         toast.error(readApiError(err));
@@ -167,7 +179,7 @@ export default function EditorPage() {
       toast.error('Save the draft first');
       return;
     }
-    if (!content.trim()) {
+    if (!contentText.trim()) {
       toast.error('Article has no content');
       return;
     }
@@ -297,7 +309,10 @@ export default function EditorPage() {
               <Input
                 id="title"
                 value={title}
-                onChange={(e) => setTitle(e.target.value)}
+                onChange={(e) => {
+                  setTitle(e.target.value);
+                  markDirty();
+                }}
                 disabled={!editable}
                 placeholder="A compelling title…"
                 maxLength={200}
@@ -306,20 +321,26 @@ export default function EditorPage() {
               />
             </Field>
 
-            <Field label="Cover image URL" htmlFor="cover" hint="Optional. Used as the article hero.">
-              <Input
-                id="cover"
-                type="url"
+            <Field label="Cover image" hint="Optional. Used as the article hero.">
+              <CoverImageUploader
                 value={coverUrl}
-                onChange={(e) => setCoverUrl(e.target.value)}
+                onChange={(url) => {
+                  setCoverUrl(url || '');
+                  markDirty();
+                }}
                 disabled={!editable}
-                placeholder="https://images.unsplash.com/…"
-                leftIcon={<ImageIcon />}
               />
             </Field>
 
             <Field label="Tags" hint="Help readers find your work. Press Enter or comma to add.">
-              <TagInput value={tags} onChange={setTags} max={8} />
+              <TagInput
+                value={tags}
+                onChange={(t) => {
+                  setTags(t);
+                  markDirty();
+                }}
+                max={8}
+              />
             </Field>
 
             <Field
@@ -330,7 +351,10 @@ export default function EditorPage() {
               <textarea
                 id="excerpt"
                 value={excerpt}
-                onChange={(e) => setExcerpt(e.target.value)}
+                onChange={(e) => {
+                  setExcerpt(e.target.value);
+                  markDirty();
+                }}
                 disabled={!editable}
                 maxLength={280}
                 rows={2}
@@ -345,21 +369,15 @@ export default function EditorPage() {
               />
             </Field>
 
-            <Field label="Content" htmlFor="content">
-              <textarea
-                id="content"
+            <Field label="Content">
+              <RichTextEditor
                 value={content}
-                onChange={(e) => setContent(e.target.value)}
-                disabled={!editable}
-                rows={18}
-                className={cn(
-                  'block w-full resize-y rounded-lg border bg-white px-3.5 py-3 font-mono text-sm leading-relaxed shadow-soft transition-all duration-200',
-                  'placeholder:text-slate-400',
-                  'focus:outline-none focus:ring-4',
-                  'dark:bg-slate-900/70 dark:text-slate-100 dark:placeholder:text-slate-500',
-                  'border-slate-200 focus:border-brand-500 focus:ring-brand-500/15 dark:border-slate-800',
-                )}
-                placeholder="Write your article here. Plain text or markdown — both render in the reader."
+                editable={editable}
+                onChange={(html, text) => {
+                  setContent(html);
+                  setContentText(text);
+                  markDirty();
+                }}
               />
             </Field>
           </div>
@@ -413,10 +431,4 @@ export default function EditorPage() {
       </div>
     </div>
   );
-}
-
-function arraysEqual(a, b) {
-  if (a.length !== b.length) return false;
-  for (let i = 0; i < a.length; i += 1) if (a[i] !== b[i]) return false;
-  return true;
 }

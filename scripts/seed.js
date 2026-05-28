@@ -15,11 +15,11 @@ import { connectDb, disconnectDb } from '../server/src/config/db.js';
 import { User } from '../server/src/models/User.js';
 import { Article } from '../server/src/models/Article.js';
 import { Subscription } from '../server/src/models/Subscription.js';
-import { uniqueSlug } from '../server/src/utils/slug.js';
+import { uniqueSlug, slugify, slugSuffix } from '../server/src/utils/slug.js';
 import { DEFAULT_PLAN } from '../shared/src/index.js';
 
-const ADMIN = { email: 'admin@blog.local', password: 'admin123!', name: 'Admin', role: 'admin' };
-const WRITER = { email: 'writer@blog.local', password: 'writer123!', name: 'Demo Writer', role: 'writer' };
+const ADMIN = { email: 'admin@blog.local', password: 'admin123!', name: 'Admin', role: 'admin', username: 'admin' };
+const WRITER = { email: 'writer@blog.local', password: 'writer123!', name: 'Demo Writer', role: 'writer', username: 'demo-writer' };
 
 const SAMPLES = [
   { title: 'Getting Started with Node.js', tags: ['node', 'tutorial'], excerpt: 'A friendly walkthrough of the Node.js runtime, npm, and your first HTTP server.' },
@@ -40,28 +40,35 @@ Start by mapping your read paths: which queries are repeated, which are unique p
 
 Avoid cache stampedes by using request coalescing or stale-while-revalidate. For hot keys, consider a small in-process LRU in front of Redis to cut even the network hop. Measure before and after — your dashboard is the only judge that matters.`;
 
-async function ensureUser({ email, password, name, role }) {
+async function ensureUser({ email, password, name, role, username }) {
   const existing = await User.findOne({ email });
   let user = existing;
   if (existing) {
+    let changed = false;
     if (existing.role !== role) {
       existing.role = role;
       existing.email_verified_at = existing.email_verified_at || new Date();
-      await existing.save();
+      changed = true;
       console.log(`  updated role: ${email} -> ${role}`);
-    } else {
-      console.log(`  exists: ${email}`);
     }
+    if (username && existing.username !== username) {
+      existing.username = username;
+      changed = true;
+      console.log(`  set username: ${email} -> @${username}`);
+    }
+    if (changed) await existing.save();
+    else console.log(`  exists: ${email}`);
   } else {
     const password_hash = await bcrypt.hash(password, 12);
     user = await User.create({
       email,
       password_hash,
       name,
+      username: username || null,
       role,
       email_verified_at: new Date(),
     });
-    console.log(`  created: ${email} (${role})`);
+    console.log(`  created: ${email} (${role}) @${username || '—'}`);
   }
   await Subscription.updateOne(
     { user_id: user._id },
@@ -90,6 +97,8 @@ async function ensureSampleArticles(authorId) {
       slug,
       excerpt: sample.excerpt,
       content,
+      content_format: 'plain',
+      content_text: content,
       tags: sample.tags,
       status: 'published',
       word_count: words,
@@ -108,11 +117,40 @@ async function ensureSampleArticles(authorId) {
   }
 }
 
+/**
+ * Assigns a unique handle to every user missing one. Idempotent and safe to
+ * re-run — only touches users where username is null/absent.
+ */
+async function backfillUsernames() {
+  const cursor = User.find({ $or: [{ username: null }, { username: { $exists: false } }] }).cursor();
+  let count = 0;
+  for (let user = await cursor.next(); user != null; user = await cursor.next()) {
+    let base = (slugify(user.name) || 'user').slice(0, 20).replace(/-+$/, '') || 'user';
+    if (base.length < 3) base = `${base}user`.slice(0, 20); // enforce min handle length
+    const handle = await uniqueSlug(base, async (s) => Boolean(await User.exists({ username: s })));
+    user.username = handle.slice(0, 30);
+    try {
+      await user.save();
+      count += 1;
+    } catch (err) {
+      if (err?.code === 11000) {
+        user.username = `user-${slugSuffix(5)}`;
+        await user.save();
+        count += 1;
+      } else throw err;
+    }
+  }
+  console.log(`  backfilled usernames: ${count}`);
+}
+
 async function main() {
   await connectDb();
   console.log('seeding users...');
   await ensureUser(ADMIN);
   const writer = await ensureUser(WRITER);
+
+  console.log('backfilling usernames for any legacy users...');
+  await backfillUsernames();
 
   console.log(`seeding articles for writer ${writer.email}...`);
   await ensureSampleArticles(writer._id);
