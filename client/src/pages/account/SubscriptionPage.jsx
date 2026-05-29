@@ -39,6 +39,7 @@ export default function SubscriptionPage() {
   const plan = sub.data?.plan;
   const subscription = sub.data?.subscription;
   const usage = sub.data?.usage;
+  const isMember = sub.data?.isMember;
   const items = payments.data || [];
 
   return (
@@ -65,21 +66,21 @@ export default function SubscriptionPage() {
                 {plan?.label || '—'}
               </div>
               <div className="mt-1 text-sm text-slate-600 dark:text-slate-400">
-                {usage?.limit === null
-                  ? 'Unlimited daily reads'
-                  : `${usage?.used ?? 0} / ${usage?.limit ?? 0} reads today`}
-                {subscription?.current_period_end && (
+                {isMember
+                  ? 'Unlimited member-only stories'
+                  : `${usage?.used ?? 0} / ${usage?.limit ?? 0} free member stories this month`}
+                {isMember && subscription?.currentPeriodEnd && (
                   <>
-                    {' · '}Renews {new Date(subscription.current_period_end).toLocaleDateString()}
+                    {' · '}Renews {new Date(subscription.currentPeriodEnd).toLocaleDateString()}
                   </>
                 )}
               </div>
             </div>
-            <Link to="/pricing">
-              <Button rightIcon={<ArrowRight />}>
-                {plan?.key === 'free' ? 'Upgrade plan' : 'Change plan'}
-              </Button>
-            </Link>
+            {!isMember && (
+              <Link to="/pricing">
+                <Button rightIcon={<ArrowRight />}>Become a member</Button>
+              </Link>
+            )}
           </div>
         )}
       </div>

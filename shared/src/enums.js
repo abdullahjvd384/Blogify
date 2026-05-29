@@ -31,6 +31,10 @@ export const UPLOAD_KINDS = Object.freeze(['cover', 'inline', 'avatar']);
 
 export const NOTIFICATION_TYPES = Object.freeze(['follow', 'comment', 'reply', 'upvote']);
 
+export const PAYOUT_PERIOD_STATUSES = Object.freeze(['open', 'finalized', 'paid']);
+
+export const WITHDRAWAL_STATUSES = Object.freeze(['requested', 'approved', 'paid', 'rejected']);
+
 export const ERROR_CODES = Object.freeze({
   VALIDATION_ERROR: 'VALIDATION_ERROR',
   UNAUTHORIZED: 'UNAUTHORIZED',

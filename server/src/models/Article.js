@@ -43,6 +43,8 @@ const articleSchema = new mongoose.Schema(
     content_format: { type: String, enum: CONTENT_FORMATS, default: 'plain' },
     content_text: { type: String, default: '' },
     cover_image_url: { type: String, default: null },
+    // Member-only stories sit behind the meter and are eligible for writer payouts.
+    member_only: { type: Boolean, default: false },
     tags: { type: [String], default: [], index: true },
     status: { type: String, enum: ARTICLE_STATUSES, default: 'draft', index: true },
     word_count: { type: Number, default: 0 },

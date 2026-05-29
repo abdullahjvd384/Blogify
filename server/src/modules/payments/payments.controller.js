@@ -12,7 +12,11 @@ function buildReturnUrl({ txnRefNo, status, planKey }) {
 }
 
 export async function checkout(req, res) {
-  const result = await service.createCheckout(req.user.id, req.valid.body.planKey);
+  const result = await service.createCheckout(
+    req.user.id,
+    req.valid.body.planKey,
+    req.valid.body.billingCycle,
+  );
   return created(res, result);
 }
 
@@ -53,7 +57,7 @@ export async function getPaymentInfo(_req, res) {
       name: env.JAZZCASH_RECEIVER_NAME,
       currency: 'PKR',
     },
-    plans: Object.values(PLANS).filter((p) => p.pricePaisa > 0),
+    plans: Object.values(PLANS).filter((p) => p.pricePaisaMonthly > 0),
   });
 }
 

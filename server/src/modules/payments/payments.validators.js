@@ -1,8 +1,9 @@
 import { z } from 'zod';
-import { PAYMENT_STATUSES, PLAN_KEYS } from '@blogplatform/shared';
+import { PAYMENT_STATUSES, PLAN_KEYS, BILLING_CYCLES } from '@blogplatform/shared';
 
 export const checkoutBodySchema = z.object({
   planKey: z.enum(PLAN_KEYS),
+  billingCycle: z.enum(BILLING_CYCLES).default('monthly'),
 });
 
 export const txnRefParamSchema = z.object({
@@ -13,6 +14,7 @@ const PAID_PLANS = PLAN_KEYS.filter((k) => k !== 'free');
 
 export const manualSubmitSchema = z.object({
   planKey: z.enum(PAID_PLANS),
+  billingCycle: z.enum(BILLING_CYCLES).default('monthly'),
   txnRefNo: z
     .string()
     .trim()

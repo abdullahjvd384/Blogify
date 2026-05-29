@@ -16,6 +16,7 @@ export const createArticleSchema = z.object({
   excerpt: z.string().trim().max(280).optional(),
   tags: tagsSchema,
   coverImageUrl: z.string().url().max(2048).optional(),
+  memberOnly: z.boolean().optional(),
 });
 
 export const updateArticleSchema = z
@@ -25,6 +26,7 @@ export const updateArticleSchema = z
     excerpt: z.string().trim().max(280).optional(),
     tags: tagsSchema.optional(),
     coverImageUrl: z.string().url().max(2048).nullable().optional(),
+    memberOnly: z.boolean().optional(),
   })
   .refine((v) => Object.keys(v).length > 0, { message: 'No fields to update' });
 

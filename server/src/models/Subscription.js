@@ -1,5 +1,5 @@
 import mongoose from 'mongoose';
-import { PLAN_KEYS, SUBSCRIPTION_STATUSES } from '@blogplatform/shared';
+import { PLAN_KEYS, SUBSCRIPTION_STATUSES, BILLING_CYCLES } from '@blogplatform/shared';
 
 /**
  * One Subscription per user (1:1 enforced via unique index on user_id).
@@ -17,6 +17,7 @@ const subscriptionSchema = new mongoose.Schema(
       index: true,
     },
     plan: { type: String, enum: PLAN_KEYS, default: 'free', required: true },
+    billing_cycle: { type: String, enum: BILLING_CYCLES, default: null },
     status: {
       type: String,
       enum: SUBSCRIPTION_STATUSES,

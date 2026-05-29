@@ -10,8 +10,8 @@ import { uniqueSlug } from '../../utils/slug.js';
 import { sanitizeArticleHtml } from '../../utils/sanitizeHtml.js';
 import { htmlToText } from '../../utils/htmlToText.js';
 import { enqueueModeration } from '../../queues/moderation.js';
-import { consumeRead } from '../../services/quota.js';
-import { DEFAULT_PLAN } from '@blogplatform/shared';
+import { consumeMemberStory } from '../../services/meter.js';
+import { isMemberSub } from '../../services/membership.js';
 import { logger } from '../../config/logger.js';
 import {
   ConflictError,
@@ -68,6 +68,7 @@ export async function createDraft(authorId, input) {
     content_text: text,
     excerpt: input.excerpt || autoExcerpt(text),
     cover_image_url: input.coverImageUrl ?? null,
+    member_only: Boolean(input.memberOnly),
     tags: input.tags || [],
     status: 'draft',
     word_count: stats.word_count,
@@ -106,6 +107,7 @@ export async function updateArticle(articleId, actor, patch) {
   if (patch.excerpt !== undefined) article.excerpt = patch.excerpt;
   if (patch.tags !== undefined) article.tags = patch.tags;
   if (patch.coverImageUrl !== undefined) article.cover_image_url = patch.coverImageUrl;
+  if (patch.memberOnly !== undefined) article.member_only = patch.memberOnly;
 
   // Snapshot the previous version when content materially changed.
   if (patch.title !== undefined || patch.content !== undefined || patch.tags !== undefined) {
@@ -170,13 +172,11 @@ export async function submitForReview(articleId, actor) {
  * author or an admin. Includes author summary and (when actor is logged in)
  * the caller's current vote so the article page can render in one round trip.
  *
- * Charges the read against the caller's daily quota when:
- *   - the caller is logged in,
- *   - the article is published,
- *   - the caller isn't the author and isn't an admin.
- *
- * On quota exhausted: throws QuotaExceededError with usage details, which the
- * error middleware surfaces as a 402 the frontend uses to pop the paywall.
+ * Access model (Medium-style):
+ *   - Free (not member_only) stories are open to everyone, no meter.
+ *   - Member-only stories: author/admin always allowed; active members allowed;
+ *     non-members are metered (N free member-only stories/month) and get a 402
+ *     once the meter is exhausted.
  */
 export async function getBySlug(slug, actor) {
   const article = await Article.findOne({ slug, deleted_at: null }).lean();
@@ -189,24 +189,30 @@ export async function getBySlug(slug, actor) {
   }
 
   let usage = null;
-  if (actor?.id && article.status === 'published' && !isOwner && !isAdmin) {
+  const needsMeter =
+    article.status === 'published' && article.member_only && actor?.id && !isOwner && !isAdmin;
+  if (needsMeter) {
     const [sub, user] = await Promise.all([
-      Subscription.findOne({ user_id: actor.id }, { plan: 1 }).lean(),
+      Subscription.findOne(
+        { user_id: actor.id },
+        { plan: 1, status: 1, current_period_end: 1 },
+      ).lean(),
       User.findById(actor.id, { timezone: 1 }).lean(),
     ]);
-    const planKey = sub?.plan || DEFAULT_PLAN;
-    const tz = user?.timezone || 'Asia/Karachi';
-    const result = await consumeRead(actor.id, article._id.toString(), planKey, tz);
-    if (result.allowed === false) {
-      throw new QuotaExceededError('Daily read limit reached', {
-        plan: result.plan,
-        used: result.used,
-        limit: result.limit,
-        remaining: 0,
-        resetAt: result.resetAt,
-      });
+    if (!isMemberSub(sub)) {
+      const tz = user?.timezone || 'Asia/Karachi';
+      const result = await consumeMemberStory(actor.id, article._id.toString(), tz);
+      if (result.allowed === false) {
+        throw new QuotaExceededError('Free member-story limit reached', {
+          used: result.used,
+          limit: result.limit,
+          remaining: 0,
+          resetAt: result.resetAt,
+          memberOnly: true,
+        });
+      }
+      usage = result;
     }
-    usage = result;
   }
 
   const enriched = await attachAuthors([article]);

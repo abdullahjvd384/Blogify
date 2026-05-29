@@ -18,7 +18,16 @@ import {
 import { logger } from '../../config/logger.js';
 
 const SUCCESS_RESPONSE_CODE = '000';
-const PERIOD_DAYS = 30;
+const PERIOD_DAYS = { monthly: 30, annual: 365 };
+
+/** Price in paisa for a plan + billing cycle. */
+function priceFor(plan, billingCycle) {
+  return billingCycle === 'annual' ? plan.pricePaisaAnnual : plan.pricePaisaMonthly;
+}
+
+function periodDaysFor(billingCycle) {
+  return PERIOD_DAYS[billingCycle] || PERIOD_DAYS.monthly;
+}
 
 /**
  * Build a JazzCash checkout for upgrading the caller to `planKey`.
@@ -28,22 +37,23 @@ const PERIOD_DAYS = 30;
  *   - Creates a Payment row in `pending` so we can match the webhook later
  *   - Returns the form URL + fields for the client to render an auto-submitting form
  */
-export async function createCheckout(userId, planKey) {
+export async function createCheckout(userId, planKey, billingCycle = 'monthly') {
   if (!isConfigured()) {
     throw new PaymentError('Payments are not configured on this server');
   }
 
   const plan = PLANS[planKey];
   if (!plan) throw new ValidationError(`Unknown plan: ${planKey}`);
-  if (planKey === DEFAULT_PLAN || plan.pricePaisa === 0) {
+  const amountPaisa = priceFor(plan, billingCycle);
+  if (planKey === DEFAULT_PLAN || !amountPaisa) {
     throw new ValidationError('That plan is not purchasable');
   }
 
   const txnRefNo = generateTxnRefNo();
   const form = buildCheckoutForm({
     txnRefNo,
-    amountPaisa: plan.pricePaisa,
-    description: `${plan.label} subscription`,
+    amountPaisa,
+    description: `${plan.label} membership (${billingCycle})`,
     billRef: userId.toString(),
     userIdPassThrough: userId.toString(),
     planKey,
@@ -54,7 +64,8 @@ export async function createCheckout(userId, planKey) {
     provider: 'jazzcash',
     txn_ref_no: txnRefNo,
     plan_key: planKey,
-    amount_paisa: plan.pricePaisa,
+    billing_cycle: billingCycle,
+    amount_paisa: amountPaisa,
     currency: 'PKR',
     status: 'pending',
     raw_request: form.fields,
@@ -135,20 +146,20 @@ export async function getStatus(userId, txnRefNo) {
 }
 
 async function activateSubscription(payment) {
+  const days = periodDaysFor(payment.billing_cycle);
   const sub = await Subscription.findOne({ user_id: payment.user_id });
   if (!sub) {
     // Defensive: every user gets one at signup, but if we ever miss, create.
-    await Subscription.create({
+    const created = await Subscription.create({
       user_id: payment.user_id,
       plan: payment.plan_key,
+      billing_cycle: payment.billing_cycle,
       status: 'active',
       started_at: new Date(),
-      current_period_end: addDays(new Date(), PERIOD_DAYS),
+      current_period_end: addDays(new Date(), days),
       last_payment_id: payment._id.toString(),
     });
-    payment.subscription_id = (
-      await Subscription.findOne({ user_id: payment.user_id }, { _id: 1 })
-    )._id;
+    payment.subscription_id = created._id;
     await payment.save();
     return;
   }
@@ -161,9 +172,10 @@ async function activateSubscription(payment) {
       : new Date();
 
   sub.plan = payment.plan_key;
+  sub.billing_cycle = payment.billing_cycle;
   sub.status = 'active';
   sub.cancel_at_period_end = false;
-  sub.current_period_end = addDays(base, PERIOD_DAYS);
+  sub.current_period_end = addDays(base, days);
   sub.last_payment_id = payment._id.toString();
   await sub.save();
 
@@ -186,10 +198,11 @@ function addDays(date, days) {
  * Idempotency: the same TID can't be submitted twice — unique index on
  * txn_ref_no surfaces as ConflictError so the user can't double-claim.
  */
-export async function submitManualPayment(userId, { planKey, txnRefNo, senderPhone, note }) {
+export async function submitManualPayment(userId, { planKey, billingCycle = 'monthly', txnRefNo, senderPhone, note }) {
   const plan = PLANS[planKey];
   if (!plan) throw new ValidationError(`Unknown plan: ${planKey}`);
-  if (planKey === DEFAULT_PLAN || plan.pricePaisa === 0) {
+  const amountPaisa = priceFor(plan, billingCycle);
+  if (planKey === DEFAULT_PLAN || !amountPaisa) {
     throw new ValidationError('That plan is not purchasable');
   }
 
@@ -207,12 +220,13 @@ export async function submitManualPayment(userId, { planKey, txnRefNo, senderPho
     provider: 'jazzcash',
     txn_ref_no: txnRefNo,
     plan_key: planKey,
-    amount_paisa: plan.pricePaisa,
+    billing_cycle: billingCycle,
+    amount_paisa: amountPaisa,
     currency: 'PKR',
     status: 'pending',
     sender_phone: senderPhone,
     proof_note: note || null,
-    raw_request: { source: 'manual_submit', planKey, senderPhone, note: note || null },
+    raw_request: { source: 'manual_submit', planKey, billingCycle, senderPhone, note: note || null },
   });
 
   return payment.toObject();

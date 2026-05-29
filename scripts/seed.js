@@ -143,17 +143,77 @@ async function backfillUsernames() {
   console.log(`  backfilled usernames: ${count}`);
 }
 
+/**
+ * One-time migration to the free/member model. Legacy paid tiers (basic/pro/
+ * god_tier) that are still active & unexpired become `member` (period kept);
+ * everything else legacy becomes `free`. Idempotent.
+ */
+async function migrateSubscriptions() {
+  const now = new Date();
+  const legacy = { plan: { $in: ['basic', 'pro', 'god_tier'] } };
+  const toMember = await Subscription.updateMany(
+    {
+      ...legacy,
+      status: 'active',
+      $or: [{ current_period_end: null }, { current_period_end: { $gt: now } }],
+    },
+    { $set: { plan: 'member', billing_cycle: 'monthly' } },
+  );
+  const toFree = await Subscription.updateMany(legacy, {
+    $set: { plan: 'free', billing_cycle: null, current_period_end: null },
+  });
+  console.log(`  subscriptions → member: ${toMember.modifiedCount}, → free: ${toFree.modifiedCount}`);
+}
+
+/** Mark several of the writer's articles member-only so the meter/paywall is testable. */
+async function markSampleMemberOnly(authorId) {
+  const arts = await Article.find({ author_id: authorId, status: 'published' })
+    .sort({ _id: 1 })
+    .limit(6);
+  for (const a of arts) {
+    if (!a.member_only) {
+      a.member_only = true;
+      await a.save();
+    }
+  }
+  console.log(`  marked ${arts.length} articles member-only`);
+}
+
 async function main() {
   await connectDb();
   console.log('seeding users...');
   await ensureUser(ADMIN);
   const writer = await ensureUser(WRITER);
+  // A demo member so the unlocked experience is testable: member@blog.local / member123!
+  const member = await ensureUser({
+    email: 'member@blog.local',
+    password: 'member123!',
+    name: 'Demo Member',
+    role: 'reader',
+    username: 'demo-member',
+  });
+  await Subscription.updateOne(
+    { user_id: member._id },
+    {
+      $set: {
+        plan: 'member',
+        billing_cycle: 'monthly',
+        status: 'active',
+        current_period_end: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000),
+      },
+    },
+    { upsert: true },
+  );
+
+  console.log('migrating legacy subscriptions to free/member...');
+  await migrateSubscriptions();
 
   console.log('backfilling usernames for any legacy users...');
   await backfillUsernames();
 
   console.log(`seeding articles for writer ${writer.email}...`);
   await ensureSampleArticles(writer._id);
+  await markSampleMemberOnly(writer._id);
 
   const stats = {
     users: await User.countDocuments(),

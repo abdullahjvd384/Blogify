@@ -8,7 +8,8 @@
       "Bash(MONGO_URI=mongodb://localhost:27017/x REDIS_URL=redis://localhost:6379 JWT_ACCESS_SECRET=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa JWT_REFRESH_SECRET=bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb node --input-type=module -e \"import\\('./src/routes.js'\\).then\\(m=>{m.buildRouter\\(\\);console.log\\('ROUTES_OK'\\)}\\).catch\\(e=>{console.error\\('IMPORT_ERR',e\\);process.exit\\(1\\)}\\)\")",
       "Bash(node --env-file=\"/c/Users/abdul/OneDrive/Desktop/WebProg-Project/server/.env\" \"/c/Users/abdul/OneDrive/Desktop/WebProg-Project/scripts/_seed_dnsfix.mjs\")",
       "Bash(curl -s -m 4 http://localhost:4000/api/v1/readyz)",
-      "Bash(node scripts/_cloudinary_check.mjs)"
+      "Bash(node scripts/_cloudinary_check.mjs)",
+      "PowerShell(foreach \\($port in 4000,5180\\) { $c = Get-NetTCPConnection -LocalPort $port -State Listen -ErrorAction SilentlyContinue; if \\($c\\) { $c.OwningProcess | Sort-Object -Unique | ForEach-Object { Stop-Process -Id $_ -Force -ErrorAction SilentlyContinue } } }; Start-Sleep -Seconds 1; \"listeners on 4000/5180: \" + \\(\\(Get-NetTCPConnection -LocalPort 4000,5180 -State Listen -ErrorAction SilentlyContinue | Measure-Object\\).Count\\))"
     ]
   }
 }

@@ -20,11 +20,12 @@ const schema = z.object({
   note: z.string().trim().max(280).optional(),
 });
 
-function priceLabel(p) {
-  return p.pricePaisa ? `PKR ${(p.pricePaisa / 100).toLocaleString()}` : 'Free';
+function priceForCycle(plan, billingCycle) {
+  if (!plan) return 0;
+  return billingCycle === 'annual' ? plan.pricePaisaAnnual : plan.pricePaisaMonthly;
 }
 
-export function ManualUpgradeModal({ open, plan, onClose, onSubmitted }) {
+export function ManualUpgradeModal({ open, plan, billingCycle = 'monthly', onClose, onSubmitted }) {
   const info = usePaymentInfo();
   const submit = useSubmitManualPayment();
   const [copied, setCopied] = useState(false);
@@ -46,6 +47,8 @@ export function ManualUpgradeModal({ open, plan, onClose, onSubmitted }) {
   if (!open || !plan) return null;
 
   const receiver = info.data?.receiver;
+  const amountPaisa = priceForCycle(plan, billingCycle);
+  const amountLabel = `PKR ${(amountPaisa / 100).toLocaleString()}`;
 
   async function copyNumber() {
     if (!receiver?.number) return;
@@ -60,7 +63,7 @@ export function ManualUpgradeModal({ open, plan, onClose, onSubmitted }) {
 
   async function onSave(values) {
     try {
-      const payment = await submit.mutateAsync({ ...values, planKey: plan.key });
+      const payment = await submit.mutateAsync({ ...values, planKey: plan.key, billingCycle });
       toast.success('Submitted — admin will verify shortly');
       onSubmitted?.(payment);
       onClose();
@@ -94,7 +97,7 @@ export function ManualUpgradeModal({ open, plan, onClose, onSubmitted }) {
             </span>
           </div>
           <h2 className="mt-2 font-display text-xl font-bold text-slate-900 dark:text-slate-50">
-            Upgrade to {plan.label} — {priceLabel(plan)}
+            {plan.label} — {amountLabel}/{billingCycle === 'annual' ? 'yr' : 'mo'}
           </h2>
           <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">
             Send the exact amount to our JazzCash account, then submit the Transaction ID below. An
@@ -105,7 +108,7 @@ export function ManualUpgradeModal({ open, plan, onClose, onSubmitted }) {
         <div className="space-y-4 px-6 py-5">
           <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-900/40">
             <div className="text-xs uppercase tracking-wider text-slate-500 dark:text-slate-400">
-              Send PKR {plan.pricePaisa ? (plan.pricePaisa / 100).toLocaleString() : '—'} to JazzCash
+              Send {amountLabel} to JazzCash
             </div>
             <div className="mt-2 flex items-center justify-between gap-2">
               <div>

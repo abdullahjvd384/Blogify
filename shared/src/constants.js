@@ -1,19 +1,34 @@
 /**
  * Subscription plans. Money is stored as integer paisa (1 PKR = 100 paisa).
- * `dailyLimit: null` means unlimited.
  *
- * Source of truth — server enforces, client mirrors for UX hints.
+ * Medium-style model: `free` reads everything that isn't member-only (plus a
+ * monthly meter of free member-only stories); `member` unlocks all member-only
+ * content. Source of truth — server enforces, client mirrors for UX hints.
  */
 export const PLANS = Object.freeze({
-  free: { key: 'free', label: 'Free', dailyLimit: 3, pricePaisa: 0 },
-  basic: { key: 'basic', label: 'Basic', dailyLimit: 10, pricePaisa: 50_000 },
-  pro: { key: 'pro', label: 'Pro', dailyLimit: 25, pricePaisa: 100_000 },
-  god_tier: { key: 'god_tier', label: 'God Tier', dailyLimit: null, pricePaisa: 250_000 },
+  free: { key: 'free', label: 'Free', pricePaisaMonthly: 0, pricePaisaAnnual: 0 },
+  member: { key: 'member', label: 'Member', pricePaisaMonthly: 50_000, pricePaisaAnnual: 500_000 },
 });
 
 export const PLAN_KEYS = Object.freeze(Object.keys(PLANS));
 
 export const DEFAULT_PLAN = 'free';
+
+export const BILLING_CYCLES = Object.freeze(['monthly', 'annual']);
+
+/**
+ * Membership + writer-payout economics. All money in paisa.
+ * - FREE_METER_PER_MONTH: member-only stories a non-member may read per month.
+ * - PAYOUT_PERCENT: share of net monthly membership revenue paid to writers.
+ * - MIN_WITHDRAWAL_PAISA: minimum a writer can cash out.
+ * - PLATFORM_TZ: timezone defining monthly payout periods + the meter month.
+ */
+export const MEMBERSHIP = Object.freeze({
+  FREE_METER_PER_MONTH: 3,
+  PAYOUT_PERCENT: 50,
+  MIN_WITHDRAWAL_PAISA: 100_000,
+  PLATFORM_TZ: 'Asia/Karachi',
+});
 
 /** Cookie names used across server + client. */
 export const COOKIE_NAMES = Object.freeze({

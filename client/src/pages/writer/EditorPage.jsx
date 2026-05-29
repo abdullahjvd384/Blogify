@@ -13,6 +13,7 @@ import {
   Loader2,
   Type,
   Pencil,
+  Crown,
 } from 'lucide-react';
 import {
   useCreateArticle,
@@ -64,6 +65,7 @@ export default function EditorPage() {
   const [excerpt, setExcerpt] = useState('');
   const [tags, setTags] = useState([]);
   const [coverUrl, setCoverUrl] = useState('');
+  const [memberOnly, setMemberOnly] = useState(false);
 
   const [serverArticle, setServerArticle] = useState(null);
   const [savedAt, setSavedAt] = useState(null);
@@ -79,6 +81,7 @@ export default function EditorPage() {
       setExcerpt(a.excerpt || '');
       setTags(a.tags || []);
       setCoverUrl(a.coverImageUrl || '');
+      setMemberOnly(Boolean(a.memberOnly));
       setSavedAt(a.updatedAt ? new Date(a.updatedAt) : null);
     }
   }, [loaded.data]);
@@ -103,6 +106,7 @@ export default function EditorPage() {
   const debouncedExcerpt = useDebouncedValue(excerpt, 800);
   const debouncedTags = useDebouncedValue(tags, 800);
   const debouncedCover = useDebouncedValue(coverUrl, 800);
+  const debouncedMemberOnly = useDebouncedValue(memberOnly, 800);
 
   const dirtyRef = useRef(false);
   // Edit-driven dirty flag: only true after a real user edit. We avoid comparing
@@ -121,6 +125,7 @@ export default function EditorPage() {
       excerpt: debouncedExcerpt || undefined,
       tags: debouncedTags,
       coverImageUrl: debouncedCover.trim() ? debouncedCover.trim() : null,
+      memberOnly: debouncedMemberOnly,
     };
     updateMut.mutate(patch, {
       onSuccess: (updated) => {
@@ -131,7 +136,7 @@ export default function EditorPage() {
       onError: (err) => toast.error(readApiError(err)),
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [debouncedTitle, debouncedContent, debouncedExcerpt, debouncedTags, debouncedCover]);
+  }, [debouncedTitle, debouncedContent, debouncedExcerpt, debouncedTags, debouncedCover, debouncedMemberOnly]);
 
   async function handleManualSave() {
     if (!title.trim()) {
@@ -146,6 +151,7 @@ export default function EditorPage() {
           ...(excerpt ? { excerpt } : {}),
           tags,
           ...(coverUrl.trim() ? { coverImageUrl: coverUrl.trim() } : {}),
+          memberOnly,
         });
         toast.success('Draft saved');
         setServerArticle(created);
@@ -164,6 +170,7 @@ export default function EditorPage() {
         excerpt: excerpt || undefined,
         tags,
         coverImageUrl: coverUrl.trim() ? coverUrl.trim() : null,
+        memberOnly,
       });
       setServerArticle(updated);
       setSavedAt(new Date());
@@ -342,6 +349,53 @@ export default function EditorPage() {
                 max={8}
               />
             </Field>
+
+            <button
+              type="button"
+              disabled={!editable}
+              onClick={() => {
+                setMemberOnly((v) => !v);
+                markDirty();
+              }}
+              className={cn(
+                'flex w-full items-center gap-3 rounded-xl border p-4 text-left transition disabled:opacity-60',
+                memberOnly
+                  ? 'border-amber-300 bg-amber-50/70 dark:border-amber-800/60 dark:bg-amber-950/30'
+                  : 'border-slate-200 bg-white hover:border-slate-300 dark:border-slate-800 dark:bg-slate-900',
+              )}
+            >
+              <span
+                className={cn(
+                  'inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg',
+                  memberOnly
+                    ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/50 dark:text-amber-300'
+                    : 'bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400',
+                )}
+              >
+                <Crown size={16} />
+              </span>
+              <span className="flex-1">
+                <span className="block text-sm font-semibold text-slate-900 dark:text-slate-100">
+                  Member-only story
+                </span>
+                <span className="block text-xs text-slate-500 dark:text-slate-400">
+                  Puts this story behind the meter and makes it eligible for writer earnings.
+                </span>
+              </span>
+              <span
+                className={cn(
+                  'relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition',
+                  memberOnly ? 'bg-amber-500' : 'bg-slate-300 dark:bg-slate-700',
+                )}
+              >
+                <span
+                  className={cn(
+                    'inline-block h-5 w-5 transform rounded-full bg-white shadow transition',
+                    memberOnly ? 'translate-x-5' : 'translate-x-0.5',
+                  )}
+                />
+              </span>
+            </button>
 
             <Field
               label="Excerpt"

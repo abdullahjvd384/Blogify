@@ -29,6 +29,8 @@ const readSchema = new mongoose.Schema(
     ended_at: { type: Date, required: true },
     watched_seconds: { type: Number, required: true, default: 0 },
     completed: { type: Boolean, default: false },
+    // Whether the reader was an active member at read time — drives payout eligibility.
+    reader_was_member: { type: Boolean, default: false },
     fraud_score: { type: Number, default: 0 },
     ip: { type: String, default: null },
     user_agent: { type: String, default: null },

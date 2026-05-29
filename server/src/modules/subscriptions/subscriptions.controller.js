@@ -7,9 +7,10 @@ export async function listPlans(_req, res) {
 }
 
 export async function getMine(req, res) {
-  const { subscription, usage, plan } = await service.getMine(req.user.id);
+  const { subscription, isMember, usage, plan } = await service.getMine(req.user.id);
   return ok(res, {
     subscription: present(subscription),
+    isMember,
     usage,
     plan,
   });

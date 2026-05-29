@@ -7,6 +7,7 @@ import {
   WATCH_TIME_INFLATION_MULTIPLIER,
   ABSOLUTE_WATCH_CAP_SECONDS,
 } from '../../services/readSession.js';
+import { isMember } from '../../services/membership.js';
 import { ConflictError, NotFoundError } from '../../utils/errors.js';
 import { logger } from '../../config/logger.js';
 
@@ -67,6 +68,7 @@ export async function end(userId, articleId, ctx = {}) {
   const expected = Math.max(60, (article.estimated_read_minutes || 1) * 60);
   const completed = watchedSeconds >= expected * COMPLETION_FRACTION;
   const meaningful = watchedSeconds >= MIN_MEANINGFUL_SECONDS;
+  const readerWasMember = await isMember(userId);
 
   const read = await Read.create({
     user_id: userId,
@@ -75,6 +77,7 @@ export async function end(userId, articleId, ctx = {}) {
     ended_at: new Date(),
     watched_seconds: watchedSeconds,
     completed,
+    reader_was_member: readerWasMember,
     fraud_score: session.fraud_score,
     ip: ctx.ip || null,
     user_agent: ctx.userAgent || null,

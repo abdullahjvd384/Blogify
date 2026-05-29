@@ -16,6 +16,7 @@ import {
   Users,
   Bookmark,
   Search,
+  Coins,
 } from 'lucide-react';
 import { useAuthStore } from '@/stores/authStore';
 import { useLogout } from '@/features/auth/hooks';
@@ -103,11 +104,13 @@ export function Header() {
     );
 
   const usage = sub?.usage;
-  const planLabel = sub?.plan?.label || (usage?.plan ? usage.plan : null);
-  const usageText = usage
-    ? usage.limit === null
-      ? `${planLabel || 'Unlimited'} · ∞`
-      : `${usage.used}/${usage.limit} today`
+  const isMember = sub?.isMember;
+  const planLabel = isMember ? 'Member' : 'Free';
+  // Members read unlimited; free users see their monthly member-story meter.
+  const usageText = isMember
+    ? 'Member · ∞'
+    : usage
+    ? `${usage.remaining ?? 0} free member reads left`
     : null;
 
   return (
@@ -274,6 +277,13 @@ export function Header() {
                       >
                         <Gauge size={15} className="text-slate-400" />
                         Your stats
+                      </Link>
+                      <Link
+                        to="/writer/earnings"
+                        className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-800"
+                      >
+                        <Coins size={15} className="text-slate-400" />
+                        Earnings
                       </Link>
                     </>
                   )}

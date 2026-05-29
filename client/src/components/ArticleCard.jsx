@@ -1,5 +1,5 @@
 import { Link, useNavigate } from 'react-router-dom';
-import { Clock, Eye, ArrowUpRight, ArrowBigUp, ArrowBigDown } from 'lucide-react';
+import { Clock, Eye, ArrowUpRight, ArrowBigUp, ArrowBigDown, Crown } from 'lucide-react';
 import { Badge } from '@/components/ui/Badge';
 import { cn } from '@/lib/cn';
 import { profilePath } from '@/lib/profile';
@@ -82,6 +82,11 @@ export function ArticleCard({ article, variant = 'default' }) {
       )}
 
       <div className={cn('flex flex-1 flex-col gap-3', variant !== 'compact' && 'p-5')}>
+        {article.memberOnly && (
+          <span className="inline-flex w-fit items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-amber-700 dark:bg-amber-950/60 dark:text-amber-300">
+            <Crown size={11} /> Member
+          </span>
+        )}
         <h3 className="line-clamp-2 text-lg font-semibold tracking-tight text-slate-900 dark:text-slate-50">
           {article.title}
         </h3>

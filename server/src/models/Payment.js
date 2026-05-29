@@ -1,5 +1,5 @@
 import mongoose from 'mongoose';
-import { PAYMENT_PROVIDERS, PAYMENT_STATUSES, PLAN_KEYS } from '@blogplatform/shared';
+import { PAYMENT_PROVIDERS, PAYMENT_STATUSES, BILLING_CYCLES } from '@blogplatform/shared';
 
 /**
  * One Payment row per checkout attempt. The provider's transaction reference
@@ -25,7 +25,9 @@ const paymentSchema = new mongoose.Schema(
     },
     provider: { type: String, enum: PAYMENT_PROVIDERS, required: true },
     txn_ref_no: { type: String, required: true, unique: true, index: true },
-    plan_key: { type: String, enum: PLAN_KEYS, required: true },
+    // Plain String (not enum) so historical basic/pro/god rows still save (e.g. refunds).
+    plan_key: { type: String, required: true },
+    billing_cycle: { type: String, enum: BILLING_CYCLES, default: null },
     amount_paisa: { type: Number, required: true },
     currency: { type: String, default: 'PKR' },
     status: {

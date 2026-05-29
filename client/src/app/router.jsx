@@ -22,9 +22,12 @@ import SearchPage from '@/pages/reader/SearchPage';
 import DraftsPage from '@/pages/writer/DraftsPage';
 import EditorPage from '@/pages/writer/EditorPage';
 import StatsPage from '@/pages/writer/StatsPage';
+import EarningsPage from '@/pages/writer/EarningsPage';
 import ModerationPage from '@/pages/admin/ModerationPage';
 import UsersPage from '@/pages/admin/UsersPage';
 import PaymentsPage from '@/pages/admin/PaymentsPage';
+import PayoutsPage from '@/pages/admin/PayoutsPage';
+import WithdrawalsPage from '@/pages/admin/WithdrawalsPage';
 import SubscriptionPage from '@/pages/account/SubscriptionPage';
 import SettingsPage from '@/pages/account/SettingsPage';
 import SavedPage from '@/pages/account/SavedPage';
@@ -66,6 +69,7 @@ export const router = createBrowserRouter([
       { path: '/writer', element: <Navigate to="/writer/drafts" replace /> },
       { path: '/writer/drafts', element: <DraftsPage /> },
       { path: '/writer/stats', element: <StatsPage /> },
+      { path: '/writer/earnings', element: <EarningsPage /> },
       { path: '/writer/new', element: <EditorPage /> },
       { path: '/writer/edit/:id', element: <EditorPage /> },
     ],
@@ -101,6 +105,8 @@ export const router = createBrowserRouter([
       { path: '/admin/moderation', element: <ModerationPage /> },
       { path: '/admin/users', element: <UsersPage /> },
       { path: '/admin/payments', element: <PaymentsPage /> },
+      { path: '/admin/payouts', element: <PayoutsPage /> },
+      { path: '/admin/withdrawals', element: <WithdrawalsPage /> },
     ],
   },
 ]);

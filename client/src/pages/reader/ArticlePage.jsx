@@ -14,6 +14,7 @@ import {
   FileQuestion,
   Sparkles,
   Tag as TagIcon,
+  Crown,
 } from 'lucide-react';
 import { useArticle, useVote } from '@/features/articles/hooks';
 import { useIsBookmarked, useToggleBookmark } from '@/features/bookmarks/hooks';
@@ -106,14 +107,14 @@ export default function ArticlePage() {
             <Sparkles size={22} />
           </span>
           <h1 className="mt-5 font-display text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-50">
-            Daily reading limit reached
+            This is a member-only story
           </h1>
           <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
-            You&apos;ve used{' '}
+            You&apos;ve read{' '}
             <span className="font-semibold text-slate-700 dark:text-slate-300">
               {quotaError.used}/{quotaError.limit}
             </span>{' '}
-            articles on the <span className="capitalize">{quotaError.plan}</span> plan today.
+            free member stories this month. Become a member to keep reading and support writers.
           </p>
           <div className="mt-6 flex flex-wrap items-center justify-center gap-2">
             <Link to="/articles">
@@ -122,7 +123,7 @@ export default function ArticlePage() {
               </Button>
             </Link>
             <Button onClick={() => setPaywallOpen(true)} leftIcon={<Sparkles />}>
-              See plans
+              Become a member
             </Button>
           </div>
         </div>
@@ -255,17 +256,20 @@ export default function ArticlePage() {
             Back to feed
           </Link>
 
-          {article.tags?.length > 0 && (
-            <div className="mt-6 flex flex-wrap gap-1.5">
-              {article.tags.slice(0, 6).map((tag) => (
-                <Link key={tag} to={`/tag/${encodeURIComponent(tag)}`}>
-                  <Badge variant="brand" leftIcon={<TagIcon />}>
-                    {tag}
-                  </Badge>
-                </Link>
-              ))}
-            </div>
-          )}
+          <div className="mt-6 flex flex-wrap items-center gap-1.5">
+            {article.memberOnly && (
+              <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide text-amber-700 dark:bg-amber-950/60 dark:text-amber-300">
+                <Crown size={12} /> Member-only
+              </span>
+            )}
+            {article.tags?.slice(0, 6).map((tag) => (
+              <Link key={tag} to={`/tag/${encodeURIComponent(tag)}`}>
+                <Badge variant="brand" leftIcon={<TagIcon />}>
+                  {tag}
+                </Badge>
+              </Link>
+            ))}
+          </div>
 
           <h1 className="mt-4 font-display text-3xl font-bold tracking-tight text-slate-900 text-balance sm:text-5xl dark:text-slate-50">
             {article.title}
