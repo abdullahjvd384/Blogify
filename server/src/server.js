@@ -9,6 +9,7 @@ import { logger } from './config/logger.js';
 import { connectDb, disconnectDb } from './config/db.js';
 import { redis, disconnectRedis } from './config/redis.js';
 import { createApp } from './app.js';
+import { startModerationWorker } from '../workers/moderation.worker.js';
 
 async function main() {
   await connectDb();
@@ -16,6 +17,14 @@ async function main() {
 
   const app = createApp();
   const server = http.createServer(app);
+
+  // Single-service mode: run the moderation worker inside the API process so one
+  // free web service handles both. For scale, run a dedicated `start:worker`.
+  let inlineWorker;
+  if (env.RUN_WORKER) {
+    inlineWorker = startModerationWorker();
+    logger.info('moderation worker started (in-process)');
+  }
 
   server.listen(env.PORT, () => {
     logger.info({ port: env.PORT, env: env.NODE_ENV }, 'server listening');
@@ -27,6 +36,13 @@ async function main() {
     shuttingDown = true;
     logger.info({ signal }, 'shutdown initiated');
     server.close(async () => {
+      if (inlineWorker) {
+        try {
+          await inlineWorker.close();
+        } catch (err) {
+          logger.error({ err }, 'error closing inline worker');
+        }
+      }
       try {
         await disconnectDb();
       } catch (err) {

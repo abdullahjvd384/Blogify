@@ -15,8 +15,25 @@ const envSchema = z.object({
     .union([z.string(), z.boolean()])
     .transform((v) => (typeof v === 'string' ? v === 'true' : v))
     .default(false),
+  // 'lax' works for same-origin (single-service) deploys; switch to 'none'
+  // (requires COOKIE_SECURE=true) when the SPA and API live on different domains.
+  COOKIE_SAMESITE: z.enum(['lax', 'strict', 'none']).default('lax'),
 
   CLIENT_ORIGIN: z.string().url().default('http://localhost:5173'),
+
+  // When true, Express serves the built React app (client/dist) and falls back
+  // to index.html for client-side routes. Enables a single-service deploy.
+  SERVE_CLIENT: z
+    .union([z.string(), z.boolean()])
+    .transform((v) => (typeof v === 'string' ? v === 'true' : v))
+    .default(false),
+
+  // When true, the moderation BullMQ worker boots inside the API process instead
+  // of a separate `start:worker` process. Lets one free web service do both.
+  RUN_WORKER: z
+    .union([z.string(), z.boolean()])
+    .transform((v) => (typeof v === 'string' ? v === 'true' : v))
+    .default(false),
 
   GROQ_API_KEY: z.string().optional(),
   GROQ_MODERATION_MODEL: z.string().default('llama-3.3-70b-versatile'),
@@ -28,6 +45,11 @@ const envSchema = z.object({
   // Manual-payment flow: the JazzCash mobile account users send money to.
   JAZZCASH_RECEIVER_NUMBER: z.string().default('03364514852'),
   JAZZCASH_RECEIVER_NAME: z.string().default('Blogify'),
+
+  // Stripe (USD card payments). Optional so the app boots without it; the
+  // checkout endpoint returns a clear error if a session is requested while unset.
+  STRIPE_SECRET_KEY: z.string().optional(),
+  STRIPE_WEBHOOK_SECRET: z.string().optional(),
 
   RESEND_API_KEY: z.string().optional(),
   EMAIL_FROM: z.string().default('Blog Platform <noreply@example.com>'),

@@ -1,0 +1,63 @@
+# Render Blueprint — single free web service that serves the React SPA,
+# the API, and the moderation worker (all in one process).
+#
+# Free tier note: this service sleeps after ~15 min of inactivity and takes
+# ~50s to wake on the next request. The in-process worker only runs while the
+# service is awake, which also keeps Upstash Redis command usage low.
+#
+# After the first deploy, fill in the env vars marked `sync: false` in the
+# Render dashboard (they are secrets and are NOT stored in this file).
+services:
+  - type: web
+    name: blogify
+    runtime: node
+    plan: free
+    # Build the shared package + the React app. --include=dev is required because
+    # NODE_ENV=production would otherwise skip vite (a devDependency).
+    buildCommand: npm install --include=dev && npm run build
+    startCommand: npm run start:server
+    healthCheckPath: /api/v1/healthz
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: SERVE_CLIENT
+        value: "true"
+      - key: RUN_WORKER
+        value: "true"
+      - key: COOKIE_SECURE
+        value: "true"
+      - key: COOKIE_SAMESITE
+        value: lax
+      # Same-origin deploy, so this points back at the service itself. After the
+      # first deploy, set this to your real URL, e.g. https://blogify.onrender.com
+      - key: CLIENT_ORIGIN
+        sync: false
+      # The SPA is built with a relative API base so it always hits this origin.
+      - key: VITE_API_BASE_URL
+        value: /api/v1
+      # ---- secrets: set these in the Render dashboard ----
+      - key: MONGO_URI
+        sync: false
+      - key: REDIS_URL
+        sync: false
+      - key: JWT_ACCESS_SECRET
+        generateValue: true
+      - key: JWT_REFRESH_SECRET
+        generateValue: true
+      # ---- optional integrations (set if you use them) ----
+      - key: GROQ_API_KEY
+        sync: false
+      - key: STRIPE_SECRET_KEY
+        sync: false
+      - key: STRIPE_WEBHOOK_SECRET
+        sync: false
+      - key: RESEND_API_KEY
+        sync: false
+      - key: EMAIL_FROM
+        sync: false
+      - key: CLOUDINARY_CLOUD_NAME
+        sync: false
+      - key: CLOUDINARY_API_KEY
+        sync: false
+      - key: CLOUDINARY_API_SECRET
+        sync: false

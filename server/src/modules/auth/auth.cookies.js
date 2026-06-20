@@ -3,7 +3,7 @@ import { env } from '../../config/env.js';
 
 const baseCookie = {
   httpOnly: true,
-  sameSite: 'lax',
+  sameSite: env.COOKIE_SAMESITE,
   secure: env.COOKIE_SECURE,
   domain: env.COOKIE_DOMAIN === 'localhost' ? undefined : env.COOKIE_DOMAIN,
   path: '/',

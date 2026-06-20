@@ -1,3 +1,5 @@
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import express from 'express';
 import helmet from 'helmet';
 import cors from 'cors';
@@ -9,6 +11,8 @@ import { logger } from './config/logger.js';
 import { requestId } from './middleware/requestId.js';
 import { errorHandler } from './middleware/error.js';
 import { notFound } from './middleware/notFound.js';
+import { asyncHandler } from './utils/asyncHandler.js';
+import { stripeWebhook } from './modules/payments/payments.controller.js';
 import { buildRouter } from './routes.js';
 
 export function createApp() {
@@ -16,7 +20,9 @@ export function createApp() {
 
   app.set('trust proxy', 1);
 
-  app.use(helmet());
+  // Disable CSP when this process also serves the SPA: the React build loads
+  // remote images (Cloudinary) and the strict default policy would block them.
+  app.use(helmet(env.SERVE_CLIENT ? { contentSecurityPolicy: false } : undefined));
   app.use(
     cors({
       origin: env.CLIENT_ORIGIN,
@@ -24,6 +30,15 @@ export function createApp() {
     }),
   );
   app.use(cookieParser());
+
+  // Stripe webhook must receive the raw body for signature verification, so it
+  // is registered BEFORE the JSON body parser runs.
+  app.post(
+    `${API_PREFIX}/payments/webhook/stripe`,
+    express.raw({ type: 'application/json' }),
+    asyncHandler(stripeWebhook),
+  );
+
   app.use(express.json({ limit: '1mb' }));
   app.use(express.urlencoded({ extended: false, limit: '1mb' }));
 
@@ -41,6 +56,17 @@ export function createApp() {
   );
 
   app.use(API_PREFIX, buildRouter());
+
+  // Single-service mode: serve the built SPA and let client-side routing handle
+  // any non-API path. API 404s still fall through to `notFound` below.
+  if (env.SERVE_CLIENT) {
+    const clientDist = path.resolve(fileURLToPath(import.meta.url), '../../../client/dist');
+    app.use(express.static(clientDist));
+    app.get('*', (req, res, next) => {
+      if (req.path.startsWith(API_PREFIX)) return next();
+      res.sendFile(path.join(clientDist, 'index.html'));
+    });
+  }
 
   app.use(notFound);
   app.use(errorHandler);
