@@ -24,13 +24,13 @@
   }
 
   ::selection {
-    background-color: rgb(99 102 241 / 0.25);
-    color: rgb(30 27 75);
+    background-color: rgb(47 158 99 / 0.22);
+    color: rgb(28 26 22);
   }
 
   .dark ::selection {
-    background-color: rgb(165 180 252 / 0.35);
-    color: rgb(238 242 255);
+    background-color: rgb(141 210 167 / 0.30);
+    color: rgb(250 249 246);
   }
 
   /* Scrollbar */
@@ -42,21 +42,21 @@
     background: transparent;
   }
   ::-webkit-scrollbar-thumb {
-    background: rgb(203 213 225 / 0.6);
+    background: rgb(212 207 194 / 0.7);
     border-radius: 9999px;
     border: 2px solid transparent;
     background-clip: content-box;
   }
   ::-webkit-scrollbar-thumb:hover {
-    background: rgb(148 163 184 / 0.8);
+    background: rgb(168 161 147 / 0.85);
     background-clip: content-box;
   }
   .dark ::-webkit-scrollbar-thumb {
-    background: rgb(51 65 85 / 0.7);
+    background: rgb(70 66 58 / 0.7);
     background-clip: content-box;
   }
   .dark ::-webkit-scrollbar-thumb:hover {
-    background: rgb(71 85 105 / 0.9);
+    background: rgb(92 87 73 / 0.9);
     background-clip: content-box;
   }
 }
@@ -110,9 +110,9 @@
   .skeleton {
     background: linear-gradient(
       90deg,
-      rgb(226 232 240 / 0.6) 0%,
-      rgb(241 245 249 / 0.9) 50%,
-      rgb(226 232 240 / 0.6) 100%
+      rgb(231 227 218 / 0.6) 0%,
+      rgb(243 241 236 / 0.9) 50%,
+      rgb(231 227 218 / 0.6) 100%
     );
     background-size: 200% 100%;
     animation: shimmer 1.6s linear infinite;
@@ -120,9 +120,9 @@
   .dark .skeleton {
     background: linear-gradient(
       90deg,
-      rgb(30 41 59 / 0.6) 0%,
-      rgb(51 65 85 / 0.9) 50%,
-      rgb(30 41 59 / 0.6) 100%
+      rgb(43 40 35 / 0.6) 0%,
+      rgb(70 66 58 / 0.9) 50%,
+      rgb(43 40 35 / 0.6) 100%
     );
     background-size: 200% 100%;
   }
@@ -192,7 +192,7 @@
     font-style: normal;
   }
   .dark .article-body blockquote {
-    background: rgb(30 27 75 / 0.45);
+    background: rgb(19 67 47 / 0.40);
     color: theme('colors.slate.200');
   }
   .article-body code {
@@ -276,21 +276,21 @@
 @layer utilities {
   .bg-grid {
     background-image:
-      linear-gradient(to right, rgb(226 232 240 / 0.6) 1px, transparent 1px),
-      linear-gradient(to bottom, rgb(226 232 240 / 0.6) 1px, transparent 1px);
+      linear-gradient(to right, rgb(231 227 218 / 0.7) 1px, transparent 1px),
+      linear-gradient(to bottom, rgb(231 227 218 / 0.7) 1px, transparent 1px);
     background-size: 36px 36px;
   }
   .dark .bg-grid {
     background-image:
-      linear-gradient(to right, rgb(30 41 59 / 0.7) 1px, transparent 1px),
-      linear-gradient(to bottom, rgb(30 41 59 / 0.7) 1px, transparent 1px);
+      linear-gradient(to right, rgb(43 40 35 / 0.7) 1px, transparent 1px),
+      linear-gradient(to bottom, rgb(43 40 35 / 0.7) 1px, transparent 1px);
   }
 
   .bg-radial-fade {
     background:
       radial-gradient(
         ellipse 80% 60% at 50% 0%,
-        rgb(199 210 254 / 0.55),
+        rgb(141 210 167 / 0.40),
         transparent 60%
       );
   }
@@ -298,7 +298,7 @@
     background:
       radial-gradient(
         ellipse 80% 60% at 50% 0%,
-        rgb(67 56 202 / 0.25),
+        rgb(31 128 80 / 0.22),
         transparent 60%
       );
   }

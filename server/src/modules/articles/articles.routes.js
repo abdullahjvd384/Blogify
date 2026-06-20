@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { asyncHandler } from '../../utils/asyncHandler.js';
-import { authRequired } from '../../middleware/auth.js';
+import { authRequired, authOptional } from '../../middleware/auth.js';
 import { requireFreshRole } from '../../middleware/roles.js';
 import { validate } from '../../middleware/validate.js';
 import {
@@ -47,9 +47,13 @@ router.get(
   asyncHandler(ctrl.getMineById),
 );
 
+// Public read: anonymous visitors can read free stories. Member-only stories
+// still require (at least) a logged-in account so the monthly meter applies —
+// enforced in the service. authOptional attaches req.user when a valid token
+// is present and treats everyone else as anonymous.
 router.get(
   '/:slug',
-  authRequired,
+  authOptional,
   validate(articleSlugParamSchema, 'params'),
   asyncHandler(ctrl.getBySlug),
 );

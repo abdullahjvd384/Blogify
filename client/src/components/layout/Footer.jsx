@@ -1,42 +1,36 @@
 import { Link } from 'react-router-dom';
-import { Github, Twitter, Linkedin, Mail, Heart } from 'lucide-react';
+import { Mail } from 'lucide-react';
 import { Logo } from '@/components/ui/Logo';
 
 const cols = [
   {
     title: 'Product',
     links: [
-      { label: 'Read articles', href: '/articles' },
-      { label: 'Become a writer', href: '/signup' },
-      { label: 'Quotas & limits', href: '#' },
-      { label: 'Changelog', href: '#' },
+      { label: 'Read articles', to: '/articles' },
+      { label: 'Pricing & membership', to: '/pricing' },
+      { label: 'Search', to: '/search' },
+    ],
+  },
+  {
+    title: 'Write',
+    links: [
+      { label: 'Start writing', to: '/signup' },
+      { label: 'Editorial guidelines', to: '/guidelines' },
+      { label: 'Writer studio', to: '/writer' },
     ],
   },
   {
     title: 'Company',
     links: [
-      { label: 'About', href: '#' },
-      { label: 'Blog', href: '/articles' },
-      { label: 'Careers', href: '#' },
-      { label: 'Press kit', href: '#' },
-    ],
-  },
-  {
-    title: 'Resources',
-    links: [
-      { label: 'Help center', href: '#' },
-      { label: 'Editorial guidelines', href: '#' },
-      { label: 'API docs', href: '#' },
-      { label: 'Community', href: '#' },
+      { label: 'About', to: '/about' },
+      { label: 'Help center', to: '/help' },
     ],
   },
   {
     title: 'Legal',
     links: [
-      { label: 'Terms of service', href: '#' },
-      { label: 'Privacy policy', href: '#' },
-      { label: 'Cookie policy', href: '#' },
-      { label: 'Acceptable use', href: '#' },
+      { label: 'Terms of service', to: '/terms' },
+      { label: 'Privacy policy', to: '/privacy' },
     ],
   },
 ];
@@ -50,26 +44,16 @@ export function Footer() {
           <div className="col-span-2">
             <Logo size="lg" />
             <p className="mt-4 max-w-xs text-sm leading-6 text-slate-600 dark:text-slate-400">
-              A no-noise blog platform with AI-moderated submissions and a quota that
-              respects your attention.
+              A calm place to read and a fair place to publish. Free to read,
+              member-supported, and built to pay writers.
             </p>
-            <div className="mt-5 flex items-center gap-2">
-              {[
-                { Icon: Github, label: 'GitHub' },
-                { Icon: Twitter, label: 'Twitter' },
-                { Icon: Linkedin, label: 'LinkedIn' },
-                { Icon: Mail, label: 'Email' },
-              ].map(({ Icon, label }) => (
-                <a
-                  key={label}
-                  href="#"
-                  aria-label={label}
-                  className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-slate-500 ring-1 ring-inset ring-slate-200 transition hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:ring-slate-800 dark:hover:bg-slate-800 dark:hover:text-slate-100"
-                >
-                  <Icon size={16} />
-                </a>
-              ))}
-            </div>
+            <a
+              href="mailto:support@blogify.app"
+              aria-label="Email support"
+              className="mt-5 inline-flex h-9 w-9 items-center justify-center rounded-lg text-slate-500 ring-1 ring-inset ring-slate-200 transition hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:ring-slate-800 dark:hover:bg-slate-800 dark:hover:text-slate-100"
+            >
+              <Mail size={16} />
+            </a>
           </div>
 
           {cols.map((col) => (
@@ -81,7 +65,7 @@ export function Footer() {
                 {col.links.map((link) => (
                   <li key={link.label}>
                     <Link
-                      to={link.href}
+                      to={link.to}
                       className="text-sm text-slate-600 transition-colors hover:text-brand-600 dark:text-slate-400 dark:hover:text-brand-300"
                     >
                       {link.label}
@@ -97,8 +81,8 @@ export function Footer() {
           <p className="text-xs text-slate-500 dark:text-slate-400">
             © {new Date().getFullYear()} Blogify. All rights reserved.
           </p>
-          <p className="inline-flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400">
-            Built with <Heart size={12} className="text-rose-500" fill="currentColor" /> for the WebProg project
+          <p className="text-xs text-slate-500 dark:text-slate-400">
+            Write what&apos;s worth reading.
           </p>
         </div>
       </div>

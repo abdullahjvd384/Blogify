@@ -18,6 +18,7 @@ import {
   ForbiddenError,
   NotFoundError,
   QuotaExceededError,
+  UnauthorizedError,
   ValidationError,
 } from '../../utils/errors.js';
 
@@ -186,6 +187,13 @@ export async function getBySlug(slug, actor) {
   const isAdmin = actor?.role === 'admin';
   if (article.status !== 'published' && !isOwner && !isAdmin) {
     throw new NotFoundError('Article not found');
+  }
+
+  // Anonymous visitors can read free stories, but member-only stories require at
+  // least a free account so the monthly meter applies. Prompt anonymous readers
+  // to sign in instead of silently bypassing the paywall.
+  if (article.status === 'published' && article.member_only && !actor?.id) {
+    throw new UnauthorizedError('Log in to read member-only stories');
   }
 
   let usage = null;

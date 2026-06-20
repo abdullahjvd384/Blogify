@@ -5,13 +5,15 @@ import { cn } from '@/lib/cn';
 import { profilePath } from '@/lib/profile';
 
 function gradientFor(seed = '') {
+  // Warm, editorial cover placeholders that stay within the brand palette
+  // (greens, teals, ambers, warm rose) so the feed reads as one cohesive set.
   const palettes = [
-    'from-indigo-500 via-violet-500 to-fuchsia-500',
-    'from-sky-500 via-blue-500 to-indigo-500',
-    'from-emerald-500 via-teal-500 to-cyan-500',
+    'from-brand-500 via-brand-600 to-accent-600',
+    'from-emerald-500 via-teal-500 to-accent-600',
     'from-amber-500 via-orange-500 to-rose-500',
-    'from-rose-500 via-pink-500 to-fuchsia-500',
-    'from-violet-500 via-purple-500 to-indigo-500',
+    'from-teal-500 via-emerald-600 to-brand-600',
+    'from-rose-500 via-amber-500 to-orange-500',
+    'from-accent-500 via-teal-600 to-brand-700',
   ];
   let hash = 0;
   for (let i = 0; i < seed.length; i++) hash = (hash * 31 + seed.charCodeAt(i)) >>> 0;

@@ -122,47 +122,6 @@ export default function LoginPage() {
           Sign in
         </Button>
       </form>
-
-      <div className="relative my-7">
-        <div className="absolute inset-0 flex items-center" aria-hidden>
-          <div className="w-full border-t border-slate-200 dark:border-slate-800" />
-        </div>
-        <div className="relative flex justify-center">
-          <span className="bg-white px-3 text-xs uppercase tracking-wider text-slate-400 dark:bg-slate-950 dark:text-slate-500">
-            or
-          </span>
-        </div>
-      </div>
-
-      <Button
-        variant="secondary"
-        size="lg"
-        className="w-full"
-        type="button"
-        onClick={() => toast.info('Single sign-on is coming soon.')}
-        leftIcon={
-          <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden>
-            <path
-              fill="#4285F4"
-              d="M21.6 12.227c0-.708-.064-1.39-.182-2.045H12v3.868h5.382a4.604 4.604 0 01-1.996 3.022v2.512h3.232c1.892-1.742 2.982-4.307 2.982-7.357z"
-            />
-            <path
-              fill="#34A853"
-              d="M12 22c2.7 0 4.964-.895 6.618-2.416l-3.232-2.512c-.895.6-2.04.954-3.386.954-2.604 0-4.81-1.76-5.595-4.123H3.073v2.59A9.996 9.996 0 0012 22z"
-            />
-            <path
-              fill="#FBBC05"
-              d="M6.405 13.903A6.005 6.005 0 016.09 12c0-.66.114-1.302.314-1.903V7.507H3.073A9.996 9.996 0 002 12c0 1.614.386 3.14 1.073 4.493l3.332-2.59z"
-            />
-            <path
-              fill="#EA4335"
-              d="M12 6.477c1.468 0 2.786.504 3.823 1.495l2.868-2.868C16.96 3.595 14.7 2.5 12 2.5A9.996 9.996 0 003.073 7.507l3.332 2.59C7.19 7.736 9.396 5.977 12 5.977V6.477z"
-            />
-          </svg>
-        }
-      >
-        Continue with Google
-      </Button>
     </AuthShell>
   );
 }

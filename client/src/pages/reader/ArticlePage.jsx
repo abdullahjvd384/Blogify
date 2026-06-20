@@ -141,14 +141,15 @@ export default function ArticlePage() {
     if (status === 401) {
       return (
         <div className="mx-auto flex max-w-md flex-col items-center px-6 py-20 text-center">
-          <span className="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-brand-100 text-brand-700 dark:bg-brand-950/60 dark:text-brand-300">
-            <Sparkles size={22} />
+          <span className="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-amber-100 text-amber-700 dark:bg-amber-950/60 dark:text-amber-300">
+            <Crown size={22} />
           </span>
           <h1 className="mt-5 font-display text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-50">
-            Log in to read this article
+            This is a member-only story
           </h1>
           <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
-            Articles are free to read with a free account. Sign up takes about ten seconds.
+            Create a free account to read it — members get unlimited access, and free
+            readers get a few member stories every month. It takes about ten seconds.
           </p>
           <div className="mt-6 flex flex-wrap items-center justify-center gap-2">
             <Link to={`/login?from=/articles/${slug}`}>
@@ -406,12 +407,12 @@ export default function ArticlePage() {
       <article className="mx-auto max-w-3xl px-4 pb-20 pt-10 sm:px-6 sm:pb-28 lg:px-8">
         {article.contentFormat === 'html' ? (
           <div
-            className="article-body font-serif text-[1.075rem] leading-[1.85] text-slate-700 dark:text-slate-300"
+            className="article-body font-serif text-[1.18rem] leading-[1.8] tracking-[-0.003em] text-slate-800 dark:text-slate-200"
             // Content is sanitized server-side on save (allowlist + iframe host check).
             dangerouslySetInnerHTML={{ __html: article.content }}
           />
         ) : (
-          <div className="article-body whitespace-pre-wrap font-serif text-[1.075rem] leading-[1.85] text-slate-700 dark:text-slate-300">
+          <div className="article-body whitespace-pre-wrap font-serif text-[1.18rem] leading-[1.8] tracking-[-0.003em] text-slate-800 dark:text-slate-200">
             {article.content}
           </div>
         )}

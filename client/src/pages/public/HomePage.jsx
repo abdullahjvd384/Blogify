@@ -6,7 +6,7 @@ import {
   Zap,
   PenLine,
   BookOpen,
-  Gauge,
+  Coins,
   CheckCircle2,
   Star,
   Quote,
@@ -26,9 +26,9 @@ const features = [
     accent: 'from-emerald-500 to-teal-500',
   },
   {
-    icon: Gauge,
-    title: 'Quotas that respect attention',
-    desc: 'A daily limit per reader and per writer keeps engagement intentional — no doomscrolling here.',
+    icon: Coins,
+    title: 'A model that pays writers',
+    desc: 'Membership unlocks every story and shares revenue with the writers you actually read — not the loudest engagement bait.',
     accent: 'from-brand-500 to-accent-500',
   },
   {
@@ -41,19 +41,19 @@ const features = [
     icon: PenLine,
     title: 'A writer-first editor',
     desc: 'Distraction-free composition, autosave, and an editorial workflow that respects your craft.',
-    accent: 'from-sky-500 to-indigo-500',
+    accent: 'from-emerald-500 to-teal-600',
   },
   {
     icon: BookOpen,
-    title: 'Curated, never algorithmic',
-    desc: 'Human-edited collections surface the best work — not the loudest engagement bait.',
-    accent: 'from-rose-500 to-fuchsia-500',
+    title: 'Yours, never algorithmic',
+    desc: 'Follow writers and topics you choose. Your feed is built from your taste — not the loudest engagement bait.',
+    accent: 'from-amber-500 to-rose-500',
   },
   {
     icon: Sparkles,
     title: 'Built for the modern web',
     desc: 'Dark mode, keyboard-first, accessible by default. The kind of app you actually enjoy opening.',
-    accent: 'from-violet-500 to-purple-500',
+    accent: 'from-teal-500 to-emerald-600',
   },
 ];
 
@@ -98,7 +98,7 @@ export default function HomePage() {
         <div className="pointer-events-none absolute inset-x-0 -top-10 -z-10 h-[420px] overflow-hidden">
           <div className="absolute left-1/2 top-0 h-96 w-96 -translate-x-1/2 animate-blob rounded-full bg-brand-400/20 blur-3xl dark:bg-brand-700/30" />
           <div className="absolute left-1/3 top-10 h-72 w-72 animate-blob rounded-full bg-accent-400/20 blur-3xl dark:bg-accent-700/30" style={{ animationDelay: '-4s' }} />
-          <div className="absolute right-1/4 top-16 h-72 w-72 animate-blob rounded-full bg-sky-400/20 blur-3xl dark:bg-sky-700/30" style={{ animationDelay: '-8s' }} />
+          <div className="absolute right-1/4 top-16 h-72 w-72 animate-blob rounded-full bg-amber-400/20 blur-3xl dark:bg-amber-700/25" style={{ animationDelay: '-8s' }} />
         </div>
         <div className="pointer-events-none absolute inset-0 -z-10 bg-grid opacity-40 [mask-image:radial-gradient(ellipse_at_top,white,transparent_70%)]" />
 
@@ -120,9 +120,9 @@ export default function HomePage() {
             </h1>
 
             <p className="mx-auto mt-5 max-w-2xl animate-fade-in text-base leading-7 text-slate-600 text-pretty sm:text-lg dark:text-slate-400" style={{ animationDelay: '0.1s' }}>
-              A no-noise blog platform with AI-moderated submissions and a quota
-              that respects your attention. Sign in, browse curated essays, and
-              publish ideas worth reading.
+              A no-noise blog platform with AI-moderated submissions and zero
+              algorithmic noise. Read free without an account, follow writers you
+              love, and publish ideas worth reading.
             </p>
 
             <div className="mt-8 flex animate-fade-in flex-col items-center justify-center gap-3 sm:flex-row" style={{ animationDelay: '0.15s' }}>
@@ -148,8 +148,8 @@ export default function HomePage() {
 
             <ul className="mt-8 flex animate-fade-in flex-wrap items-center justify-center gap-x-6 gap-y-2 text-xs text-slate-500 dark:text-slate-400" style={{ animationDelay: '0.2s' }}>
               {[
-                'Free forever for readers',
-                '3 articles a day on Free',
+                'Free to read — no account needed',
+                'Members read everything',
                 'No algorithm. Ever.',
               ].map((line) => (
                 <li key={line} className="inline-flex items-center gap-1.5">
@@ -177,7 +177,7 @@ export default function HomePage() {
                     key={i}
                     className="overflow-hidden rounded-xl border border-slate-200 bg-slate-50 dark:border-slate-800 dark:bg-slate-950/60"
                   >
-                    <div className={`h-20 bg-gradient-to-br ${['from-brand-500 to-accent-500', 'from-sky-500 to-indigo-500', 'from-emerald-500 to-teal-500'][i]}`} />
+                    <div className={`h-20 bg-gradient-to-br ${['from-brand-500 to-accent-500', 'from-amber-500 to-rose-500', 'from-emerald-500 to-teal-500'][i]}`} />
                     <div className="space-y-2 p-3">
                       <div className="h-3 w-3/4 rounded bg-slate-200 dark:bg-slate-800" />
                       <div className="h-2.5 w-full rounded bg-slate-200 dark:bg-slate-800" />

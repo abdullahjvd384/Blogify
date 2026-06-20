@@ -12,6 +12,11 @@ import ResetPasswordPage from '@/pages/public/ResetPasswordPage';
 import VerifyEmailPage from '@/pages/public/VerifyEmailPage';
 import PricingPage from '@/pages/public/PricingPage';
 import PaymentReturnPage from '@/pages/public/PaymentReturnPage';
+import AboutPage from '@/pages/public/AboutPage';
+import TermsPage from '@/pages/public/TermsPage';
+import PrivacyPage from '@/pages/public/PrivacyPage';
+import GuidelinesPage from '@/pages/public/GuidelinesPage';
+import HelpPage from '@/pages/public/HelpPage';
 import NotFoundPage from '@/pages/public/NotFoundPage';
 import FeedPage from '@/pages/reader/FeedPage';
 import ArticlePage from '@/pages/reader/ArticlePage';
@@ -48,6 +53,11 @@ export const router = createBrowserRouter([
       { path: '/tag/:tag', element: <TagPage /> },
       { path: '/search', element: <SearchPage /> },
       { path: '/pricing', element: <PricingPage /> },
+      { path: '/about', element: <AboutPage /> },
+      { path: '/terms', element: <TermsPage /> },
+      { path: '/privacy', element: <PrivacyPage /> },
+      { path: '/guidelines', element: <GuidelinesPage /> },
+      { path: '/help', element: <HelpPage /> },
       { path: '/payments/return', element: <PaymentReturnPage /> },
       { path: '/login', element: <LoginPage /> },
       { path: '/signup', element: <SignupPage /> },
