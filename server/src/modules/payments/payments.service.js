@@ -10,6 +10,12 @@ import {
   isConfigured,
 } from '../../services/jazzcash.js';
 import {
+  isConfigured as isStripeConfigured,
+  generateRef,
+  createCheckoutSession,
+} from '../../services/stripe.js';
+import { env } from '../../config/env.js';
+import {
   ConflictError,
   NotFoundError,
   PaymentError,
@@ -76,6 +82,96 @@ export async function createCheckout(userId, planKey, billingCycle = 'monthly') 
     formUrl: form.formUrl,
     fields: form.fields,
   };
+}
+
+/**
+ * Create a Stripe Checkout Session for upgrading the caller to `planKey`.
+ * Records a `pending` Payment (provider 'stripe') keyed by our own ref, which we
+ * also pass to Stripe as metadata so the webhook can match it back. Returns the
+ * hosted Checkout URL for the client to redirect to.
+ */
+export async function createStripeCheckout(userId, planKey, billingCycle = 'monthly', userEmail) {
+  if (!isStripeConfigured()) {
+    throw new PaymentError('Card payments are not configured on this server');
+  }
+
+  const plan = PLANS[planKey];
+  if (!plan) throw new ValidationError(`Unknown plan: ${planKey}`);
+  const amountCents = priceFor(plan, billingCycle);
+  if (planKey === DEFAULT_PLAN || !amountCents) {
+    throw new ValidationError('That plan is not purchasable');
+  }
+
+  const ref = generateRef();
+  const base = env.CLIENT_ORIGIN.replace(/\/$/, '');
+  const successUrl = `${base}/payments/return?txn=${encodeURIComponent(ref)}&status=pending&plan=${planKey}`;
+  const cancelUrl = `${base}/pricing?canceled=1`;
+
+  const session = await createCheckoutSession({
+    ref,
+    amountCents,
+    planLabel: plan.label,
+    planKey,
+    billingCycle,
+    userId: userId.toString(),
+    customerEmail: userEmail,
+    successUrl,
+    cancelUrl,
+  });
+
+  await Payment.create({
+    user_id: userId,
+    provider: 'stripe',
+    txn_ref_no: ref,
+    plan_key: planKey,
+    billing_cycle: billingCycle,
+    amount_paisa: amountCents,
+    currency: 'USD',
+    status: 'pending',
+    raw_request: { source: 'stripe_checkout', sessionId: session.id },
+  });
+
+  return { url: session.url, ref };
+}
+
+/**
+ * Handle a verified Stripe webhook event. We only act on
+ * `checkout.session.completed` with a paid status: mark the matching Payment
+ * success and activate the subscription. Idempotent — Stripe may redeliver.
+ */
+export async function handleStripeWebhook(event) {
+  if (event.type !== 'checkout.session.completed') return { handled: false };
+
+  const session = event.data.object;
+  if (session.payment_status !== 'paid') return { handled: false };
+
+  const ref = session.metadata?.ref;
+  if (!ref) {
+    logger.warn({ sessionId: session.id }, 'stripe webhook missing ref metadata');
+    return { handled: false };
+  }
+
+  const payment = await Payment.findOne({ txn_ref_no: ref, provider: 'stripe' });
+  if (!payment) {
+    logger.warn({ ref, sessionId: session.id }, 'stripe webhook: payment not found');
+    return { handled: false };
+  }
+  if (payment.status === 'success') return { handled: true, idempotent: true };
+
+  payment.status = 'success';
+  payment.completed_at = new Date();
+  payment.response_code = 'paid';
+  payment.response_message = 'Stripe checkout completed';
+  payment.raw_response = {
+    sessionId: session.id,
+    paymentIntent: session.payment_intent,
+    amountTotal: session.amount_total,
+    currency: session.currency,
+  };
+  await payment.save();
+  await activateSubscription(payment);
+
+  return { handled: true, planKey: payment.plan_key };
 }
 
 /**

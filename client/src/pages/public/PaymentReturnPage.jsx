@@ -13,6 +13,7 @@ import { usePaymentStatus } from '@/features/payments/hooks';
 import { Button } from '@/components/ui/Button';
 import { useAuthStore } from '@/stores/authStore';
 import { cn } from '@/lib/cn';
+import { usd } from '@/lib/money';
 
 const STATUS = {
   success: {
@@ -133,7 +134,7 @@ export default function PaymentReturnPage() {
               <>
                 <dt className="text-slate-500 dark:text-slate-400">Amount</dt>
                 <dd className="text-right font-medium text-slate-700 dark:text-slate-200">
-                  Rs {(data.amountPaisa / 100).toLocaleString()}
+                  {usd(data.amountPaisa)}
                 </dd>
               </>
             )}

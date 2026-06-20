@@ -1,12 +1,15 @@
 import { useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { toast } from 'sonner';
 import { Check, Sparkles, Crown, ArrowRight, ShieldCheck, Heart, BookOpen } from 'lucide-react';
 import { MEMBERSHIP } from '@blogplatform/shared';
 import { usePlans, useMySubscription } from '@/features/subscription/hooks';
+import { useStripeCheckout } from '@/features/payments/hooks';
 import { useAuthStore } from '@/stores/authStore';
-import { ManualUpgradeModal } from '@/components/ManualUpgradeModal';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
+import { usd as rs } from '@/lib/money';
+import { readApiError } from '@/lib/apiError';
 import { cn } from '@/lib/cn';
 
 const FREE_PERKS = [
@@ -25,21 +28,17 @@ const MEMBER_PERKS = [
 
 const FACTS = [
   { icon: ShieldCheck, label: 'AI-moderated quality on every story' },
-  { icon: Heart, label: 'Half of membership revenue goes to writers' },
+  { icon: Heart, label: `${MEMBERSHIP.PAYOUT_PERCENT}% of membership revenue goes to writers` },
   { icon: Sparkles, label: 'Cancel anytime, no questions asked' },
 ];
-
-function rs(paisa) {
-  return `Rs ${(paisa / 100).toLocaleString()}`;
-}
 
 export default function PricingPage() {
   const user = useAuthStore((s) => s.user);
   const navigate = useNavigate();
   const { data: plans } = usePlans();
   const { data: mySub } = useMySubscription();
+  const checkout = useStripeCheckout();
   const [cycle, setCycle] = useState('monthly');
-  const [open, setOpen] = useState(false);
 
   const memberPlan = useMemo(() => (plans || []).find((p) => p.key === 'member'), [plans]);
   const isMember = mySub?.isMember;
@@ -48,12 +47,18 @@ export default function PricingPage() {
   const annualMonthlyEquivalent = memberPlan ? memberPlan.pricePaisaAnnual / 12 : 0;
   const annualSavingPct = monthly ? Math.round((1 - annualMonthlyEquivalent / monthly) * 100) : 0;
 
-  function onJoin() {
+  async function onJoin() {
     if (!user) {
       navigate('/login', { state: { from: '/pricing' } });
       return;
     }
-    setOpen(true);
+    try {
+      const { url } = await checkout.mutateAsync({ planKey: 'member', billingCycle: cycle });
+      if (url) window.location.href = url;
+      else toast.error('Could not start checkout. Please try again.');
+    } catch (err) {
+      toast.error(readApiError(err));
+    }
   }
 
   return (
@@ -105,7 +110,7 @@ export default function PricingPage() {
             </div>
             <h2 className="mt-5 font-display text-xl font-bold text-slate-900 dark:text-slate-50">Free</h2>
             <div className="mt-3 font-display text-4xl font-bold tracking-tight text-slate-900 dark:text-slate-50">
-              Rs 0
+              {rs(0)}
             </div>
             <ul className="mt-6 space-y-2.5 text-sm">
               {FREE_PERKS.map((perk) => (
@@ -160,7 +165,7 @@ export default function PricingPage() {
                   Active
                 </Button>
               ) : (
-                <Button className="w-full" onClick={onJoin} rightIcon={<ArrowRight />}>
+                <Button className="w-full" onClick={onJoin} isLoading={checkout.isPending} rightIcon={<ArrowRight />}>
                   Become a member
                 </Button>
               )}
@@ -191,14 +196,6 @@ export default function PricingPage() {
           </p>
         )}
       </div>
-
-      <ManualUpgradeModal
-        open={open}
-        plan={memberPlan}
-        billingCycle={cycle}
-        onClose={() => setOpen(false)}
-        onSubmitted={() => navigate('/account/subscription')}
-      />
     </div>
   );
 }

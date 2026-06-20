@@ -14,6 +14,7 @@ import { useMyPayments } from '@/features/payments/hooks';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import { Skeleton } from '@/components/ui/Skeleton';
+import { usd } from '@/lib/money';
 
 function statusBadge(status) {
   if (status === 'success') return <Badge variant="success" leftIcon={<CheckCircle2 />}>Approved</Badge>;
@@ -23,8 +24,7 @@ function statusBadge(status) {
 }
 
 function priceLabel(paisa) {
-  if (!paisa) return 'PKR 0';
-  return `PKR ${(paisa / 100).toLocaleString()}`;
+  return usd(paisa);
 }
 
 function fmtDate(d) {
@@ -89,7 +89,7 @@ export default function SubscriptionPage() {
       <div className="mt-8">
         <div className="mb-3 flex items-center justify-between">
           <h2 className="font-display text-lg font-bold text-slate-900 dark:text-slate-50">
-            Payment submissions
+            Payment history
           </h2>
           <Button
             variant="ghost"
@@ -106,8 +106,8 @@ export default function SubscriptionPage() {
           <div className="rounded-2xl border border-dashed border-slate-300 bg-white/40 p-8 text-center dark:border-slate-700 dark:bg-slate-900/40">
             <Wallet size={28} className="mx-auto text-slate-400" />
             <p className="mt-3 text-sm text-slate-500 dark:text-slate-400">
-              No submissions yet. To upgrade, send payment via JazzCash and submit your Transaction ID
-              from the pricing page.
+              No payments yet. Become a member from the pricing page to unlock every member-only
+              story and support the writers you read.
             </p>
             <Link to="/pricing" className="mt-4 inline-block">
               <Button leftIcon={<Sparkles />}>See plans</Button>
@@ -131,7 +131,7 @@ export default function SubscriptionPage() {
                       {statusBadge(p.status)}
                     </div>
                     <div className="mt-1 text-sm text-slate-600 dark:text-slate-400">
-                      {priceLabel(p.amountPaisa)} · TID{' '}
+                      {priceLabel(p.amountPaisa)} · Ref{' '}
                       <span className="font-mono text-xs text-slate-700 dark:text-slate-300">{p.txnRefNo}</span>
                     </div>
                     <div className="mt-1 text-xs text-slate-500 dark:text-slate-400 inline-flex items-center gap-1">

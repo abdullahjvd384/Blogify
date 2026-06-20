@@ -1,5 +1,12 @@
 /**
- * Subscription plans. Money is stored as integer paisa (1 PKR = 100 paisa).
+ * App currency. Money is billed and paid out in US Dollars.
+ * NOTE: amounts are stored as integer minor units (USD cents). The historical
+ * field names still say "Paisa" — read them as "cents" (1 USD = 100 cents).
+ */
+export const CURRENCY = Object.freeze({ code: 'USD', symbol: '$', minorPerUnit: 100 });
+
+/**
+ * Subscription plans. Money is stored as integer USD cents (1 USD = 100 cents).
  *
  * Medium-style model: `free` reads everything that isn't member-only (plus a
  * monthly meter of free member-only stories); `member` unlocks all member-only
@@ -7,7 +14,8 @@
  */
 export const PLANS = Object.freeze({
   free: { key: 'free', label: 'Free', pricePaisaMonthly: 0, pricePaisaAnnual: 0 },
-  member: { key: 'member', label: 'Member', pricePaisaMonthly: 50_000, pricePaisaAnnual: 500_000 },
+  // $5 / month, $50 / year (cents).
+  member: { key: 'member', label: 'Member', pricePaisaMonthly: 500, pricePaisaAnnual: 5_000 },
 });
 
 export const PLAN_KEYS = Object.freeze(Object.keys(PLANS));
@@ -17,16 +25,17 @@ export const DEFAULT_PLAN = 'free';
 export const BILLING_CYCLES = Object.freeze(['monthly', 'annual']);
 
 /**
- * Membership + writer-payout economics. All money in paisa.
+ * Membership + writer-payout economics. All money in USD cents.
  * - FREE_METER_PER_MONTH: member-only stories a non-member may read per month.
- * - PAYOUT_PERCENT: share of net monthly membership revenue paid to writers.
- * - MIN_WITHDRAWAL_PAISA: minimum a writer can cash out.
+ * - PAYOUT_PERCENT: share of monthly membership revenue paid out to writers
+ *   (the platform keeps the rest to run the service).
+ * - MIN_WITHDRAWAL_PAISA: minimum a writer can cash out (cents) — $10.
  * - PLATFORM_TZ: timezone defining monthly payout periods + the meter month.
  */
 export const MEMBERSHIP = Object.freeze({
   FREE_METER_PER_MONTH: 3,
-  PAYOUT_PERCENT: 50,
-  MIN_WITHDRAWAL_PAISA: 100_000,
+  PAYOUT_PERCENT: 40,
+  MIN_WITHDRAWAL_PAISA: 1_000,
   PLATFORM_TZ: 'Asia/Karachi',
 });
 

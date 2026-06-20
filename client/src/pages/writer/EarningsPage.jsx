@@ -8,12 +8,10 @@ import { Input } from '@/components/ui/Input';
 import { Field } from '@/components/ui/Field';
 import { Badge } from '@/components/ui/Badge';
 import { readApiError } from '@/lib/apiError';
+import { usd as rs } from '@/lib/money';
 
-const MIN_PKR = MEMBERSHIP.MIN_WITHDRAWAL_PAISA / 100;
-
-function rs(paisa) {
-  return `Rs ${((paisa || 0) / 100).toLocaleString()}`;
-}
+const MIN_USD = MEMBERSHIP.MIN_WITHDRAWAL_PAISA / 100;
+const MIN_LABEL = rs(MEMBERSHIP.MIN_WITHDRAWAL_PAISA);
 
 function StatCard({ icon: Icon, label, value, accent }) {
   return (
@@ -50,13 +48,13 @@ export default function EarningsPage() {
 
   function submitWithdrawal(e) {
     e.preventDefault();
-    const pkr = Number(amount);
-    if (!Number.isFinite(pkr) || pkr < MIN_PKR) {
-      toast.error(`Minimum withdrawal is Rs ${MIN_PKR.toLocaleString()}`);
+    const dollars = Number(amount);
+    if (!Number.isFinite(dollars) || dollars < MIN_USD) {
+      toast.error(`Minimum withdrawal is ${MIN_LABEL}`);
       return;
     }
     request.mutate(
-      { amountPaisa: Math.round(pkr * 100), accountNumber: account.trim() },
+      { amountPaisa: Math.round(dollars * 100), accountNumber: account.trim() },
       {
         onSuccess: () => {
           toast.success('Withdrawal requested — an admin will process it shortly');
@@ -96,17 +94,17 @@ export default function EarningsPage() {
           {/* Withdraw */}
           <div className="mt-10 rounded-2xl border border-slate-200 bg-white p-6 shadow-soft dark:border-slate-800 dark:bg-slate-900/60">
             <h2 className="flex items-center gap-2 font-display text-lg font-semibold text-slate-900 dark:text-slate-50">
-              <Banknote size={18} className="text-brand-500" /> Withdraw to JazzCash
+              <Banknote size={18} className="text-brand-500" /> Withdraw your earnings
             </h2>
             <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-              Available to withdraw: <span className="font-semibold">{rs(available)}</span> · minimum Rs {MIN_PKR.toLocaleString()}.
+              Available to withdraw: <span className="font-semibold">{rs(available)}</span> · minimum {MIN_LABEL}.
             </p>
             <form onSubmit={submitWithdrawal} className="mt-4 grid gap-3 sm:grid-cols-[1fr_1fr_auto] sm:items-end">
-              <Field label="Amount (PKR)" htmlFor="amount">
-                <Input id="amount" type="number" min={MIN_PKR} value={amount} onChange={(e) => setAmount(e.target.value)} placeholder={String(MIN_PKR)} />
+              <Field label="Amount (USD)" htmlFor="amount">
+                <Input id="amount" type="number" min={MIN_USD} step="0.01" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder={String(MIN_USD)} />
               </Field>
-              <Field label="JazzCash number" htmlFor="account">
-                <Input id="account" value={account} onChange={(e) => setAccount(e.target.value)} placeholder="03XX-XXXXXXX" />
+              <Field label="Payout account (PayPal email)" htmlFor="account">
+                <Input id="account" value={account} onChange={(e) => setAccount(e.target.value)} placeholder="you@example.com" />
               </Field>
               <Button type="submit" isLoading={request.isPending} disabled={available < MEMBERSHIP.MIN_WITHDRAWAL_PAISA}>
                 Request
@@ -114,7 +112,7 @@ export default function EarningsPage() {
             </form>
             {available < MEMBERSHIP.MIN_WITHDRAWAL_PAISA && (
               <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">
-                Keep writing member-only stories to reach the Rs {MIN_PKR.toLocaleString()} minimum.
+                Keep writing member-only stories to reach the {MIN_LABEL} minimum.
               </p>
             )}
           </div>

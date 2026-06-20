@@ -1,7 +1,9 @@
 import * as service from './payments.service.js';
+import { constructEvent } from '../../services/stripe.js';
 import { env } from '../../config/env.js';
 import { ok, created } from '../../utils/response.js';
 import { present, presentMany } from '../../utils/presenter.js';
+import { logger } from '../../config/logger.js';
 import { PLANS } from '@blogplatform/shared';
 
 /** Build the user-facing return URL from server config + result params. */
@@ -47,6 +49,41 @@ export async function jazzcashWebhook(req, res) {
 export async function getStatus(req, res) {
   const result = await service.getStatus(req.user.id, req.valid.params.txnRefNo);
   return ok(res, result);
+}
+
+/** Create a Stripe Checkout Session and return its hosted URL for redirect. */
+export async function stripeCheckout(req, res) {
+  const result = await service.createStripeCheckout(
+    req.user.id,
+    req.valid.body.planKey,
+    req.valid.body.billingCycle,
+    req.user.email,
+  );
+  return created(res, result);
+}
+
+/**
+ * Stripe webhook receiver. Mounted with a raw body parser (see app.js) so the
+ * signature can be verified. Always returns 2xx quickly once verified so Stripe
+ * stops retrying.
+ */
+export async function stripeWebhook(req, res) {
+  const signature = req.headers['stripe-signature'];
+  let event;
+  try {
+    event = constructEvent(req.body, signature);
+  } catch (err) {
+    logger.warn({ err: err.message }, 'stripe webhook signature verification failed');
+    return res.status(400).send(`Webhook Error: ${err.message}`);
+  }
+
+  try {
+    await service.handleStripeWebhook(event);
+  } catch (err) {
+    logger.error({ err, type: event.type }, 'stripe webhook handling failed');
+    // Still 200 so Stripe doesn't hammer retries; we log for manual follow-up.
+  }
+  return res.json({ received: true });
 }
 
 /** Public-ish: the JazzCash receiver number + plan price table the UI shows. */

@@ -22,6 +22,7 @@ import { Badge } from '@/components/ui/Badge';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { readApiError } from '@/lib/apiError';
 import { cn } from '@/lib/cn';
+import { usd } from '@/lib/money';
 
 const FILTERS = [
   { value: 'pending', label: 'Pending' },
@@ -38,8 +39,7 @@ function statusBadge(status) {
 }
 
 function priceLabel(paisa) {
-  if (!paisa) return 'PKR 0';
-  return `PKR ${(paisa / 100).toLocaleString()}`;
+  return usd(paisa);
 }
 
 export default function PaymentsPage() {
@@ -80,8 +80,8 @@ export default function PaymentsPage() {
             Payment review
           </h1>
           <p className="mt-2 max-w-xl text-sm text-slate-600 dark:text-slate-400">
-            Verify each user's JazzCash Transaction ID against the receiving account, then approve or
-            reject. Approving activates their plan for 30 days.
+            Card payments are confirmed automatically by Stripe. Any manual entries can be reviewed
+            here — approving activates the user&apos;s plan.
           </p>
         </div>
         <Button
@@ -223,9 +223,9 @@ export default function PaymentsPage() {
 }
 
 const PRESET_REASONS = [
-  "Transaction ID not found on the receiving account",
+  "Payment reference could not be verified",
   "Amount paid doesn't match the plan price",
-  "Sender phone number doesn't match the JazzCash record",
+  "Payment details could not be confirmed",
   "Duplicate submission — payment already credited",
 ];
 

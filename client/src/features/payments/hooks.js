@@ -7,6 +7,13 @@ export function useCheckout() {
   });
 }
 
+/** Create a Stripe Checkout Session; resolves to { url } to redirect the user. */
+export function useStripeCheckout() {
+  return useMutation({
+    mutationFn: (body) => paymentsApi.stripeCheckout(body),
+  });
+}
+
 export function usePaymentStatus(txnRefNo, opts = {}) {
   return useQuery({
     queryKey: ['payment', 'status', txnRefNo],

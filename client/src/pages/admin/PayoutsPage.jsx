@@ -6,10 +6,7 @@ import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Badge } from '@/components/ui/Badge';
 import { readApiError } from '@/lib/apiError';
-
-function rs(paisa) {
-  return `Rs ${((paisa || 0) / 100).toLocaleString()}`;
-}
+import { usd as rs } from '@/lib/money';
 
 function thisMonthKey() {
   const d = new Date();

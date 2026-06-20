@@ -35,6 +35,17 @@ router.get(
   asyncHandler(ctrl.listMine),
 );
 
+// --- Stripe (USD card payments, primary) ---
+
+router.post(
+  '/stripe/checkout',
+  authRequired,
+  validate(checkoutBodySchema),
+  asyncHandler(ctrl.stripeCheckout),
+);
+// NOTE: the Stripe webhook (POST /payments/webhook/stripe) is registered in
+// app.js with a raw body parser, since signature verification needs the raw bytes.
+
 // --- Legacy automated JazzCash sandbox flow (kept for completeness, unused in UI) ---
 
 router.post(

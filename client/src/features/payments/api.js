@@ -1,11 +1,15 @@
 import { api } from '@/lib/api';
 
 export const paymentsApi = {
-  // Legacy automated flow (kept for completeness, not used in UI).
-  checkout: (planKey) =>
-    api.post('/payments/checkout', { planKey }).then((r) => r.data.data),
+  // Stripe hosted checkout (primary). Returns { url } to redirect the browser to.
+  stripeCheckout: (body) =>
+    api.post('/payments/stripe/checkout', body).then((r) => r.data.data),
   status: (txnRefNo) =>
     api.get(`/payments/${encodeURIComponent(txnRefNo)}`).then((r) => r.data.data),
+
+  // Legacy automated JazzCash flow (kept for completeness, not used in UI).
+  checkout: (planKey) =>
+    api.post('/payments/checkout', { planKey }).then((r) => r.data.data),
 
   // Manual JazzCash flow (primary).
   info: () => api.get('/payments/info').then((r) => r.data.data),

@@ -5,12 +5,9 @@ import { useAdminWithdrawals, useMarkWithdrawalPaid, useRejectWithdrawal } from 
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import { readApiError } from '@/lib/apiError';
+import { usd as rs } from '@/lib/money';
 
 const TABS = ['requested', 'approved', 'paid', 'rejected', 'all'];
-
-function rs(paisa) {
-  return `Rs ${((paisa || 0) / 100).toLocaleString()}`;
-}
 
 function statusBadge(s) {
   if (s === 'paid') return <Badge variant="success">Paid</Badge>;
@@ -27,7 +24,7 @@ export default function WithdrawalsPage() {
   const items = list.data || [];
 
   function onMarkPaid(id) {
-    if (!window.confirm('Confirm you have paid this writer via JazzCash?')) return;
+    if (!window.confirm('Confirm you have paid this writer to their payout account?')) return;
     markPaid.mutate(id, {
       onSuccess: () => toast.success('Marked as paid'),
       onError: (err) => toast.error(readApiError(err)),
@@ -52,8 +49,8 @@ export default function WithdrawalsPage() {
         Writer withdrawals
       </h1>
       <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">
-        Pay the writer via JazzCash out-of-band, then mark the request paid. Rejecting returns the
-        funds to their balance.
+        Pay the writer to their payout account out-of-band, then mark the request paid. Rejecting
+        returns the funds to their balance.
       </p>
 
       <div className="mt-6 flex items-center justify-between">
@@ -96,7 +93,7 @@ export default function WithdrawalsPage() {
                 <div className="mt-1 text-sm text-slate-600 dark:text-slate-400">
                   {w.writer?.name || 'Unknown'}
                   {w.writer?.username && <span className="text-xs text-slate-400"> @{w.writer.username}</span>}
-                  {' · '}JazzCash <span className="font-mono text-xs">{w.accountNumber}</span>
+                  {' · '}Payout to <span className="font-mono text-xs">{w.accountNumber}</span>
                 </div>
                 <div className="mt-1 text-xs text-slate-500 dark:text-slate-400">
                   Requested {new Date(w.createdAt).toLocaleString()}
