@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>DevCrunch — logo variants</title>
+    <style>
+      body { margin: 0; font-family: system-ui, sans-serif; background: #faf9f6; color: #1c1a16; }
+      h1 { padding: 24px; margin: 0; font-size: 18px; }
+      .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 16px; padding: 0 24px 24px; }
+      .card { border: 1px solid #e7e3da; border-radius: 16px; padding: 20px; display: flex; flex-direction: column; align-items: center; gap: 12px; }
+      .card.dark { background: #11100d; border-color: #2b2823; color: #faf9f6; }
+      .card img { height: 72px; }
+      .card .lock { height: 48px; }
+      .label { font-size: 12px; opacity: .7; word-break: break-all; text-align: center; }
+    </style>
+  </head>
+  <body>
+    <h1>DevCrunch — placeholder logo variants</h1>
+    <div class="grid">
+      <div class="card"><img src="/brand/devcrunch-mark.svg" alt="" /><span class="label">mark (gradient)</span></div>
+      <div class="card"><img src="/brand/devcrunch-mark-green.svg" alt="" /><span class="label">mark (solid green)</span></div>
+      <div class="card"><img src="/brand/devcrunch-mark-dark.svg" alt="" /><span class="label">mark (dark, mono)</span></div>
+      <div class="card dark"><img src="/brand/devcrunch-mark.svg" alt="" /><span class="label">mark on dark</span></div>
+      <div class="card dark"><img src="/brand/devcrunch-mark-white.svg" alt="" /><span class="label">mark (white chip) on dark</span></div>
+      <div class="card"><img class="lock" src="/brand/devcrunch-lockup.svg" alt="" /><span class="label">lockup (light bg)</span></div>
+      <div class="card dark"><img class="lock" src="/brand/devcrunch-lockup-white.svg" alt="" /><span class="label">lockup (dark bg)</span></div>
+    </div>
+  </body>
+</html>
