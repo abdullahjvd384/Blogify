@@ -6,7 +6,7 @@ export default function GuidelinesPage() {
     <DocPage
       eyebrow="For writers"
       title="Editorial Guidelines"
-      intro="Blogify is open to writing from every field. These guidelines keep the platform trustworthy without policing your voice."
+      intro="DevCrunch is open to writing from every corner of tech. These guidelines keep the platform trustworthy without policing your voice."
     >
       <h2>What belongs here</h2>
       <p>

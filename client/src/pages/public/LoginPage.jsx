@@ -46,7 +46,7 @@ export default function LoginPage() {
   return (
     <AuthShell
       title="Welcome back"
-      subtitle="Sign in to continue reading and writing on Blogify."
+      subtitle="Sign in to continue reading and writing on DevCrunch."
       footer={
         <>
           New here?{' '}

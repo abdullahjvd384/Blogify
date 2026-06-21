@@ -14,6 +14,7 @@ import { notFound } from './middleware/notFound.js';
 import { asyncHandler } from './utils/asyncHandler.js';
 import { stripeWebhook } from './modules/payments/payments.controller.js';
 import { buildRouter } from './routes.js';
+import { spaHandler, sitemapHandler } from './seo.js';
 
 export function createApp() {
   const app = express();
@@ -61,10 +62,15 @@ export function createApp() {
   // any non-API path. API 404s still fall through to `notFound` below.
   if (env.SERVE_CLIENT) {
     const clientDist = path.resolve(fileURLToPath(import.meta.url), '../../../client/dist');
+    // Dynamic sitemap (before static so it isn't shadowed by a missing file).
+    app.get('/sitemap.xml', asyncHandler(sitemapHandler));
+    // Static assets (JS/CSS/images, robots.txt, favicon, manifest). Serves
+    // index.html with default meta for "/".
     app.use(express.static(clientDist));
+    // SPA fallback with per-article server-side SEO meta injection.
     app.get('*', (req, res, next) => {
       if (req.path.startsWith(API_PREFIX)) return next();
-      res.sendFile(path.join(clientDist, 'index.html'));
+      return asyncHandler(spaHandler)(req, res, next);
     });
   }
 

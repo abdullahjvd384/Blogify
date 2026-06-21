@@ -24,6 +24,7 @@ import { VoteButtons } from '@/components/VoteButtons';
 import { PaywallModal } from '@/components/PaywallModal';
 import { FollowButton } from '@/components/FollowButton';
 import { Avatar } from '@/components/Avatar';
+import { Seo } from '@/components/Seo';
 import { CommentSection } from '@/components/comments/CommentSection';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
@@ -237,6 +238,15 @@ export default function ArticlePage() {
 
   return (
     <div className="relative">
+      <Seo
+        title={article.title}
+        description={article.excerpt}
+        path={`/articles/${slug}`}
+        image={article.coverImageUrl}
+        type="article"
+        publishedTime={date ? new Date(date).toISOString() : undefined}
+        author={authorName}
+      />
       {/* Reading progress bar */}
       <div className="fixed inset-x-0 top-16 z-30 h-0.5 bg-transparent">
         <div

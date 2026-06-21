@@ -57,7 +57,7 @@ export default function SignupPage() {
   async function onSubmit(values) {
     try {
       await signup.mutateAsync(values);
-      toast.success('Account created — welcome to Blogify');
+      toast.success('Account created — welcome to DevCrunch');
       navigate('/', { replace: true });
     } catch (err) {
       toast.error(readApiError(err));

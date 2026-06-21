@@ -1,0 +1,12 @@
+{
+  "name": "DevCrunch",
+  "short_name": "DevCrunch",
+  "description": "Sharp takes on AI, startups, and security — for people who build.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#faf9f6",
+  "theme_color": "#1f8050",
+  "icons": [
+    { "src": "/favicon.svg", "type": "image/svg+xml", "sizes": "any", "purpose": "any" }
+  ]
+}

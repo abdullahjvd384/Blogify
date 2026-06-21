@@ -56,7 +56,7 @@ export async function createCheckoutSession({
           currency: CURRENCY.code.toLowerCase(),
           unit_amount: amountCents,
           product_data: {
-            name: `Blogify ${planLabel} membership`,
+            name: `DevCrunch ${planLabel} membership`,
             description: `Billed ${billingCycle} ($ per ${interval})`,
           },
         },

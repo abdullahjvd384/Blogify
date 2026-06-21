@@ -54,6 +54,13 @@ export function Header() {
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [q, setQ] = useState('');
+
+  function submitSearch(e) {
+    e.preventDefault();
+    const term = q.trim();
+    navigate(term ? `/search?q=${encodeURIComponent(term)}` : '/search');
+  }
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 4);
@@ -159,10 +166,26 @@ export function Header() {
               {usageText}
             </Link>
           )}
+          <form onSubmit={submitSearch} className="hidden lg:block" role="search">
+            <div className="relative">
+              <Search
+                size={15}
+                className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
+              />
+              <input
+                type="search"
+                value={q}
+                onChange={(e) => setQ(e.target.value)}
+                placeholder="Search DevCrunch…"
+                aria-label="Search articles"
+                className="h-9 w-44 rounded-full border border-slate-200 bg-slate-50/80 pl-9 pr-3 text-sm text-slate-700 outline-none transition placeholder:text-slate-400 focus:w-60 focus:border-brand-300 focus:bg-white focus:ring-2 focus:ring-brand-500/20 dark:border-slate-800 dark:bg-slate-900/80 dark:text-slate-200 dark:focus:bg-slate-900"
+              />
+            </div>
+          </form>
           <Link
             to="/search"
             aria-label="Search"
-            className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-slate-600 transition hover:bg-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 dark:text-slate-300 dark:hover:bg-slate-800"
+            className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-slate-600 transition hover:bg-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 lg:hidden dark:text-slate-300 dark:hover:bg-slate-800"
           >
             <Search size={18} />
           </Link>

@@ -44,7 +44,7 @@ export function AuthShell({ title, subtitle, children, footer }) {
           <Link to="/" className="inline-block">
             <span className="inline-flex items-center gap-2">
               <Logo withText={false} size="md" />
-              <span className="font-display text-lg font-bold tracking-tight">Blogify</span>
+              <span className="font-display text-lg font-bold tracking-tight">DevCrunch</span>
             </span>
           </Link>
 

@@ -69,7 +69,7 @@ export default function HelpPage() {
     <DocPage
       eyebrow="Help center"
       title="How can we help?"
-      intro="Answers to the most common questions about reading, writing, and membership on Blogify."
+      intro="Answers to the most common questions about reading, writing, and membership on DevCrunch."
     >
       {faqs.map((item) => (
         <div key={item.q}>
@@ -80,7 +80,7 @@ export default function HelpPage() {
 
       <h2>Still stuck?</h2>
       <p>
-        Email us at <a href="mailto:support@blogify.app">support@blogify.app</a> and
+        Email us at <a href="mailto:support@devcrunch.tech">support@devcrunch.tech</a> and
         we&apos;ll get back to you. For platform rules, see the{' '}
         <Link to="/guidelines">editorial guidelines</Link>,{' '}
         <Link to="/terms">terms</Link>, and{' '}

@@ -10,7 +10,7 @@ export default function PrivacyPage() {
     >
       <h2>Our approach</h2>
       <p>
-        We collect the minimum we need to run Blogify well. We don&apos;t sell your
+        We collect the minimum we need to run DevCrunch well. We don&apos;t sell your
         personal data, and we don&apos;t run third-party advertising trackers on the
         Service.
       </p>
@@ -61,7 +61,7 @@ export default function PrivacyPage() {
 
       <h2>Service providers</h2>
       <p>
-        We rely on trusted third parties to operate Blogify — for example, cloud
+        We rely on trusted third parties to operate DevCrunch — for example, cloud
         database and media hosting, email delivery, and payment processing. They
         process data only on our behalf and under appropriate safeguards.
       </p>
@@ -84,7 +84,7 @@ export default function PrivacyPage() {
       <h2>Contact</h2>
       <p>
         Questions about privacy? Email{' '}
-        <a href="mailto:support@blogify.app">support@blogify.app</a>.
+        <a href="mailto:support@devcrunch.tech">support@devcrunch.tech</a>.
       </p>
     </DocPage>
   );

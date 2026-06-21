@@ -55,7 +55,7 @@ export default function VerifyEmailPage() {
     return (
       <AuthShell
         title="Email verified"
-        subtitle="Thanks — your account is fully set up. You can keep using Blogify as usual."
+        subtitle="Thanks — your account is fully set up. You can keep using DevCrunch as usual."
       >
         <div className="flex flex-col items-center gap-4 py-6 text-center">
           <span className="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300">

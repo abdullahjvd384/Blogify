@@ -44,11 +44,11 @@ export function Footer() {
           <div className="col-span-2">
             <Logo size="lg" />
             <p className="mt-4 max-w-xs text-sm leading-6 text-slate-600 dark:text-slate-400">
-              A calm place to read and a fair place to publish. Free to read,
-              member-supported, and built to pay writers.
+              Sharp takes on AI, startups, and security — for people who build.
+              Free to read, member-supported, and built to pay writers.
             </p>
             <a
-              href="mailto:support@blogify.app"
+              href="mailto:support@devcrunch.tech"
               aria-label="Email support"
               className="mt-5 inline-flex h-9 w-9 items-center justify-center rounded-lg text-slate-500 ring-1 ring-inset ring-slate-200 transition hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:ring-slate-800 dark:hover:bg-slate-800 dark:hover:text-slate-100"
             >
@@ -79,10 +79,10 @@ export function Footer() {
 
         <div className="mt-12 flex flex-col items-start justify-between gap-3 border-t border-slate-200 pt-6 dark:border-slate-800 sm:flex-row sm:items-center">
           <p className="text-xs text-slate-500 dark:text-slate-400">
-            © {new Date().getFullYear()} Blogify. All rights reserved.
+            © {new Date().getFullYear()} DevCrunch. All rights reserved.
           </p>
           <p className="text-xs text-slate-500 dark:text-slate-400">
-            Write what&apos;s worth reading.
+            Tech that matters, written by people who ship.
           </p>
         </div>
       </div>

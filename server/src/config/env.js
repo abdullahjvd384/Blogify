@@ -46,7 +46,7 @@ const envSchema = z.object({
   JAZZCASH_RETURN_URL: z.string().url().optional(),
   // Manual-payment flow: the JazzCash mobile account users send money to.
   JAZZCASH_RECEIVER_NUMBER: z.string().default('03364514852'),
-  JAZZCASH_RECEIVER_NAME: z.string().default('Blogify'),
+  JAZZCASH_RECEIVER_NAME: z.string().default('DevCrunch'),
 
   // Stripe (USD card payments). Optional so the app boots without it; the
   // checkout endpoint returns a clear error if a session is requested while unset.
@@ -54,7 +54,7 @@ const envSchema = z.object({
   STRIPE_WEBHOOK_SECRET: z.string().optional(),
 
   RESEND_API_KEY: z.string().optional(),
-  EMAIL_FROM: z.string().default('Blog Platform <noreply@example.com>'),
+  EMAIL_FROM: z.string().default('DevCrunch <noreply@devcrunch.tech>'),
 
   // Cloudinary image hosting. Optional so the app boots without it; the uploads
   // endpoint throws a clear error if a signature is requested while unset.

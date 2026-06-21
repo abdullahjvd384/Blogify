@@ -1,0 +1,171 @@
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { Article } from './models/Article.js';
+import { env } from './config/env.js';
+
+const CLIENT_DIST = path.resolve(fileURLToPath(import.meta.url), '../../../client/dist');
+const INDEX_PATH = path.join(CLIENT_DIST, 'index.html');
+const BASE = (env.CLIENT_ORIGIN || 'https://devcrunch.tech').replace(/\/$/, '');
+
+// index.html template, read once and cached. Server-rendered meta is injected
+// between the <!--SEO-->/<!--/SEO--> markers in client/index.html.
+let template;
+function getTemplate() {
+  if (template === undefined) {
+    try {
+      template = fs.readFileSync(INDEX_PATH, 'utf8');
+    } catch {
+      template = null;
+    }
+  }
+  return template;
+}
+
+const SEO_BLOCK = /<!--SEO-->[\s\S]*?<!--\/SEO-->/;
+
+function esc(s = '') {
+  return String(s)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+function metaBlock({ title, description, url, image, type = 'website', publishedTime, author, jsonLd }) {
+  const lines = [
+    '<!--SEO-->',
+    `<title>${esc(title)}</title>`,
+    `<meta name="description" content="${esc(description)}" />`,
+    `<link rel="canonical" href="${esc(url)}" />`,
+    `<meta property="og:type" content="${esc(type)}" />`,
+    `<meta property="og:site_name" content="DevCrunch" />`,
+    `<meta property="og:title" content="${esc(title)}" />`,
+    `<meta property="og:description" content="${esc(description)}" />`,
+    `<meta property="og:url" content="${esc(url)}" />`,
+    image ? `<meta property="og:image" content="${esc(image)}" />` : '',
+    `<meta name="twitter:card" content="summary_large_image" />`,
+    `<meta name="twitter:title" content="${esc(title)}" />`,
+    `<meta name="twitter:description" content="${esc(description)}" />`,
+    image ? `<meta name="twitter:image" content="${esc(image)}" />` : '',
+    publishedTime ? `<meta property="article:published_time" content="${esc(publishedTime)}" />` : '',
+    author ? `<meta property="article:author" content="${esc(author)}" />` : '',
+    jsonLd ? `<script type="application/ld+json">${jsonLd}</script>` : '',
+    '<!--/SEO-->',
+  ];
+  return lines.filter(Boolean).join('\n    ');
+}
+
+function articleJsonLd({ title, description, image, url, publishedTime, modifiedTime, author }) {
+  const data = {
+    '@context': 'https://schema.org',
+    '@type': 'Article',
+    headline: title,
+    description,
+    image: image ? [image] : undefined,
+    datePublished: publishedTime || undefined,
+    dateModified: modifiedTime || publishedTime || undefined,
+    author: author ? { '@type': 'Person', name: author } : undefined,
+    publisher: {
+      '@type': 'Organization',
+      name: 'DevCrunch',
+      logo: { '@type': 'ImageObject', url: `${BASE}/favicon.svg` },
+    },
+    mainEntityOfPage: url,
+  };
+  // JSON.stringify drops undefined keys; safe to embed (no </script> in our data).
+  return JSON.stringify(data).replace(/</g, '\\u003c');
+}
+
+/**
+ * SPA handler with per-article server-side meta injection. Article detail pages
+ * (`/articles/:slug`) get title/description/OG/Twitter/JSON-LD reflecting the
+ * actual article so crawlers and social scrapers (which don't run JS) see the
+ * right tags on first byte. Everything else gets the default index.html.
+ */
+export async function spaHandler(req, res, next) {
+  const tmpl = getTemplate();
+  if (!tmpl) return next();
+
+  const match = req.path.match(/^\/articles\/([^/]+)\/?$/);
+  if (match) {
+    try {
+      const slug = decodeURIComponent(match[1]);
+      const article = await Article.findOne({ slug, status: 'published', deleted_at: null })
+        .populate('author_id', 'name')
+        .lean();
+      if (article) {
+        const title = `${article.title} · DevCrunch`;
+        const description = (article.excerpt || article.content_text || '').slice(0, 200);
+        const url = `${BASE}/articles/${encodeURIComponent(slug)}`;
+        const image = article.cover_image_url || `${BASE}/og-image.png`;
+        const publishedTime = article.published_at
+          ? new Date(article.published_at).toISOString()
+          : undefined;
+        const modifiedTime = article.updated_at
+          ? new Date(article.updated_at).toISOString()
+          : undefined;
+        const author = article.author_id?.name || 'DevCrunch';
+        const html = tmpl.replace(
+          SEO_BLOCK,
+          metaBlock({
+            title,
+            description,
+            url,
+            image,
+            type: 'article',
+            publishedTime,
+            author,
+            jsonLd: articleJsonLd({ title, description, image, url, publishedTime, modifiedTime, author }),
+          }),
+        );
+        res.set('Content-Type', 'text/html; charset=utf-8');
+        return res.send(html);
+      }
+    } catch {
+      // fall through to default template on any error
+    }
+  }
+
+  res.set('Content-Type', 'text/html; charset=utf-8');
+  return res.send(tmpl);
+}
+
+/** Dynamic sitemap of static routes + every published article. */
+export async function sitemapHandler(_req, res, next) {
+  try {
+    const articles = await Article.find({ status: 'published', deleted_at: null })
+      .select('slug updated_at published_at')
+      .sort({ published_at: -1 })
+      .limit(5000)
+      .lean();
+
+    const staticPaths = ['/', '/articles', '/pricing', '/about', '/guidelines', '/help'];
+    const urls = [
+      ...staticPaths.map((p) => ({ loc: `${BASE}${p}`, priority: p === '/' ? '1.0' : '0.6' })),
+      ...articles.map((a) => ({
+        loc: `${BASE}/articles/${encodeURIComponent(a.slug)}`,
+        lastmod: new Date(a.updated_at || a.published_at || Date.now()).toISOString(),
+        priority: '0.8',
+      })),
+    ];
+
+    const body =
+      `<?xml version="1.0" encoding="UTF-8"?>\n` +
+      `<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n` +
+      urls
+        .map(
+          (u) =>
+            `  <url><loc>${esc(u.loc)}</loc>` +
+            (u.lastmod ? `<lastmod>${u.lastmod}</lastmod>` : '') +
+            `<priority>${u.priority}</priority></url>`,
+        )
+        .join('\n') +
+      `\n</urlset>\n`;
+
+    res.set('Content-Type', 'application/xml; charset=utf-8');
+    return res.send(body);
+  } catch (err) {
+    return next(err);
+  }
+}

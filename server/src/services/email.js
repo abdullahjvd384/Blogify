@@ -68,11 +68,11 @@ function htmlToText(html) {
 }
 
 const BRAND = {
-  bg: '#0f172a',
+  bg: '#11100d',
   card: '#ffffff',
-  text: '#0f172a',
-  muted: '#64748b',
-  accent: '#4f46e5',
+  text: '#1c1a16',
+  muted: '#5c5749',
+  accent: '#1f8050',
 };
 
 function shell(title, bodyHtml) {
@@ -84,7 +84,7 @@ function shell(title, bodyHtml) {
     ${bodyHtml}
   </div>
   <p style="max-width:520px;margin:16px auto 0;font-size:12px;color:#94a3b8;text-align:center">
-    You're getting this from Blogify. If you didn't request this, you can safely ignore it.
+    You're getting this from DevCrunch. If you didn't request this, you can safely ignore it.
   </p>
 </body></html>`;
 }
@@ -105,14 +105,14 @@ function btn(href, label) {
 
 export function verifyEmailTemplate({ name, link }) {
   return {
-    subject: 'Verify your Blogify email',
+    subject: 'Verify your DevCrunch email',
     html: shell(
       'Verify your email',
       `<p style="color:${BRAND.muted};font-size:14px;line-height:1.6">
         Hi ${escape(name || 'there')},
       </p>
       <p style="color:${BRAND.muted};font-size:14px;line-height:1.6">
-        Welcome to Blogify. Click the button below to verify your email. The link is valid for 24 hours.
+        Welcome to DevCrunch. Click the button below to verify your email. The link is valid for 24 hours.
       </p>
       ${btn(link, 'Verify email')}
       <p style="color:${BRAND.muted};font-size:12px;line-height:1.6;margin-top:24px">
@@ -124,7 +124,7 @@ export function verifyEmailTemplate({ name, link }) {
 
 export function passwordResetTemplate({ name, link }) {
   return {
-    subject: 'Reset your Blogify password',
+    subject: 'Reset your DevCrunch password',
     html: shell(
       'Reset your password',
       `<p style="color:${BRAND.muted};font-size:14px;line-height:1.6">

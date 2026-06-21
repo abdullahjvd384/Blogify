@@ -8,6 +8,7 @@ import { ArticleCardSkeleton } from '@/components/ui/Skeleton';
 import { Input } from '@/components/ui/Input';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
+import { Seo } from '@/components/Seo';
 import { cn } from '@/lib/cn';
 
 const sortOptions = [
@@ -80,6 +81,11 @@ export default function FeedPage() {
 
   return (
     <div className="relative">
+      <Seo
+        title="Latest articles"
+        description="Browse the latest writing on AI, startups, funding, and cybersecurity from the DevCrunch community."
+        path="/articles"
+      />
       <div className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-72 bg-radial-fade" />
 
       <div className="mx-auto max-w-7xl px-4 pb-20 pt-12 sm:px-6 sm:pt-16 lg:px-8">

@@ -17,6 +17,7 @@ import { ArticleCard } from '@/components/ArticleCard';
 import { ArticleCardSkeleton } from '@/components/ui/Skeleton';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
+import { Seo } from '@/components/Seo';
 
 const features = [
   {
@@ -92,6 +93,7 @@ export default function HomePage() {
 
   return (
     <div className="overflow-hidden">
+      <Seo path="/" />
       {/* HERO */}
       <section className="relative isolate">
         <div className="pointer-events-none absolute inset-0 -z-10 bg-radial-fade" />
@@ -110,19 +112,19 @@ export default function HomePage() {
                 className="group inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white/60 px-3 py-1 text-xs font-medium text-slate-700 shadow-soft backdrop-blur transition hover:border-brand-300 hover:text-brand-700 dark:border-slate-800 dark:bg-slate-900/60 dark:text-slate-300 dark:hover:border-brand-700 dark:hover:text-brand-300"
               >
                 <span className="inline-flex h-1.5 w-1.5 rounded-full bg-emerald-500 ring-2 ring-emerald-500/30" />
-                New · AI-moderated submissions are live
+                New · Independent tech coverage, zero clickbait
                 <ArrowRight size={12} className="transition-transform group-hover:translate-x-0.5" />
               </a>
             </div>
 
             <h1 className="mt-6 animate-fade-in font-display text-4xl font-bold tracking-tight text-slate-900 text-balance sm:text-6xl lg:text-7xl dark:text-slate-50" style={{ animationDelay: '0.05s' }}>
-              Read what writers <span className="gradient-text">want to write.</span>
+              The tech stories that <span className="gradient-text">actually matter.</span>
             </h1>
 
             <p className="mx-auto mt-5 max-w-2xl animate-fade-in text-base leading-7 text-slate-600 text-pretty sm:text-lg dark:text-slate-400" style={{ animationDelay: '0.1s' }}>
-              A no-noise blog platform with AI-moderated submissions and zero
-              algorithmic noise. Read free without an account, follow writers you
-              love, and publish ideas worth reading.
+              DevCrunch is sharp, independent coverage of AI, startups, and
+              security — written by people who build. Read free without an account,
+              follow the writers you trust, and skip the algorithm.
             </p>
 
             <div className="mt-8 flex animate-fade-in flex-col items-center justify-center gap-3 sm:flex-row" style={{ animationDelay: '0.15s' }}>
@@ -168,7 +170,7 @@ export default function HomePage() {
                 <span className="h-2.5 w-2.5 rounded-full bg-amber-400" />
                 <span className="h-2.5 w-2.5 rounded-full bg-emerald-400" />
                 <span className="ml-3 inline-flex items-center gap-2 rounded-md bg-slate-100 px-2 py-1 text-[11px] text-slate-500 dark:bg-slate-800 dark:text-slate-400">
-                  blogify.app/articles
+                  devcrunch.tech/articles
                 </span>
               </div>
               <div className="grid grid-cols-1 gap-3 p-4 md:grid-cols-3">
@@ -251,7 +253,8 @@ export default function HomePage() {
                 Fresh from the community
               </h2>
               <p className="mt-2 max-w-xl text-sm text-slate-600 dark:text-slate-400">
-                Hand-picked essays and tutorials posted this week. Spend the next 10 minutes wisely.
+                The latest on AI, startups, and security — straight from the writers
+                covering it. Spend the next 10 minutes wisely.
               </p>
             </div>
             <Link to="/articles">

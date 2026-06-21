@@ -7,6 +7,7 @@ import { useAuthStore } from '@/stores/authStore';
 import { ArticleCard } from '@/components/ArticleCard';
 import { ArticleCardSkeleton } from '@/components/ui/Skeleton';
 import { Button } from '@/components/ui/Button';
+import { Seo } from '@/components/Seo';
 
 export default function TagPage() {
   const { tag } = useParams();
@@ -23,6 +24,11 @@ export default function TagPage() {
 
   return (
     <div className="relative">
+      <Seo
+        title={`#${tag}`}
+        description={`Stories tagged #${tag} on DevCrunch — sharp takes on AI, startups, and security.`}
+        path={`/tag/${encodeURIComponent(tag)}`}
+      />
       <div className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-60 bg-radial-fade" />
       <div className="mx-auto max-w-7xl px-4 pb-20 pt-12 sm:px-6 sm:pt-16 lg:px-8">
         <div className="flex flex-wrap items-end justify-between gap-4">

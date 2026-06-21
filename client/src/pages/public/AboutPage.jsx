@@ -6,9 +6,9 @@ export default function AboutPage() {
     <DocPage
       eyebrow="About"
       title="Writing that respects your attention"
-      intro="Blogify is a home for thoughtful writing — a calm place to read, and a fair place to publish."
+      intro="DevCrunch is a home for thoughtful writing — a calm place to read, and a fair place to publish."
     >
-      <h2>Why we built Blogify</h2>
+      <h2>Why we built DevCrunch</h2>
       <p>
         Most of the internet is built to capture your attention and sell it. Feeds
         are tuned for outrage, articles are stretched to fit more ads, and good
@@ -16,7 +16,7 @@ export default function AboutPage() {
         space where the writing comes first.
       </p>
       <p>
-        Blogify is a publishing platform for writers from any field — engineers,
+        DevCrunch is a publishing platform for writers from any field — engineers,
         essayists, founders, researchers, storytellers. Anyone can read. Anyone can
         write. And the people who write the things you love can actually earn from it.
       </p>

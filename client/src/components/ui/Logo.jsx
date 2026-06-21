@@ -20,15 +20,18 @@ export function Logo({ className, withText = true, size = 'md' }) {
           aria-hidden
         >
           <path
-            d="M5 4h9a5 5 0 010 10H9v6H5V4zm4 3v4h5a2 2 0 100-4H9z"
-            fill="currentColor"
+            d="M9 7.5 4.5 12 9 16.5M15 7.5 19.5 12 15 16.5"
+            stroke="currentColor"
+            strokeWidth="2.2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
           />
         </svg>
         <span className="pointer-events-none absolute inset-0 bg-gradient-to-tr from-white/0 via-white/15 to-white/0" />
       </span>
       {withText && (
         <span className={cn('font-display font-bold tracking-tight text-slate-900 dark:text-slate-50', text)}>
-          Blogify
+          Dev<span className="gradient-text">Crunch</span>
         </span>
       )}
     </span>
