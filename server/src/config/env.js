@@ -38,6 +38,11 @@ const envSchema = z.object({
   GROQ_API_KEY: z.string().optional(),
   GROQ_MODERATION_MODEL: z.string().default('llama-3.3-70b-versatile'),
 
+  // OpenAI powers AI moderation. Optional so the app boots without it; when unset
+  // the worker routes every article to needs_review for manual approval.
+  OPENAI_API_KEY: z.string().optional(),
+  OPENAI_MODERATION_MODEL: z.string().default('gpt-4o-mini'),
+
   JAZZCASH_MERCHANT_ID: z.string().optional(),
   JAZZCASH_PASSWORD: z.string().optional(),
   JAZZCASH_INTEGRITY_SALT: z.string().optional(),

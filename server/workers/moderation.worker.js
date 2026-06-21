@@ -2,7 +2,7 @@ import { Worker } from 'bullmq';
 import { Article } from '../src/models/Article.js';
 import { ModerationJob } from '../src/models/ModerationJob.js';
 import { logger } from '../src/config/logger.js';
-import { moderateArticle } from '../src/services/groq.js';
+import { moderateArticle } from '../src/services/openai.js';
 import { bullConnection } from '../src/queues/connection.js';
 import { MODERATION_QUEUE } from '../src/queues/moderation.js';
 
