@@ -47,7 +47,7 @@ export async function listQueue({ cursor, limit, status }) {
 }
 
 /**
- * Admin override → publish. Bypasses GROQ; records an audit row with
+ * Admin override → publish. Bypasses OpenAI; records an audit row with
  * decided_by: 'admin' so we keep a paper trail even on manual decisions.
  */
 export async function adminApprove(articleId, admin) {
@@ -109,7 +109,7 @@ export async function adminReject(articleId, admin, { reasons }) {
 }
 
 /**
- * Admin retry: send the article back through GROQ. Useful when the model was
+ * Admin retry: send the article back through OpenAI. Useful when the model was
  * having a bad day, or when prompts/rules changed and we want to re-grade an
  * article. Resets status to `submitted` so the worker picks it up.
  */

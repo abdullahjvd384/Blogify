@@ -45,7 +45,7 @@ services:
       - key: JWT_REFRESH_SECRET
         generateValue: true
       # ---- optional integrations (set if you use them) ----
-      - key: GROQ_API_KEY
+      - key: OPENAI_API_KEY
         sync: false
       - key: STRIPE_SECRET_KEY
         sync: false

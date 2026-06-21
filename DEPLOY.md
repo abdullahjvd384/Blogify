@@ -12,7 +12,7 @@ API, and the moderation worker from a single Node process. Backing stores
 | Database | **MongoDB Atlas** | M0, 512 MB | Plenty for a demo |
 | Redis (queue + rate limit) | **Upstash** | Free | Use the **TCP** `rediss://` URL, not the REST URL — BullMQ needs TCP |
 | Images | **Cloudinary** | Free | Optional |
-| AI moderation | **Groq** | Free | Optional — without it, articles route to `needs_review` |
+| AI moderation | **OpenAI** | Pay-as-you-go | Optional — without it, articles route to `needs_review` |
 | Email | **Resend** | 100/day | Optional |
 | Payments | **Stripe** | Test mode free | Use test keys for a demo |
 
@@ -68,7 +68,7 @@ Set:
 ```
 CLIENT_ORIGIN=https://blogify.onrender.com
 ```
-Optional integrations (only if you use them): `GROQ_API_KEY`, `STRIPE_SECRET_KEY`,
+Optional integrations (only if you use them): `OPENAI_API_KEY`, `STRIPE_SECRET_KEY`,
 `STRIPE_WEBHOOK_SECRET`, `RESEND_API_KEY`, `EMAIL_FROM`, `CLOUDINARY_*`.
 
 > `VITE_API_BASE_URL` must be present **at build time** — it's baked into the SPA.

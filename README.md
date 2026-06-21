@@ -7,7 +7,7 @@ Monorepo for the blog platform described in [plans/](plans/).
 - **Server**: Node 20 + Express + Mongoose + Zod + BullMQ + pino
 - **Data**: MongoDB + Redis
 - **Auth**: JWT in httpOnly cookies, refresh-token rotation
-- **AI moderation**: GROQ
+- **AI moderation**: OpenAI
 - **Payments**: JazzCash (sandbox in dev)
 
 ## Layout

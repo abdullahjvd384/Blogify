@@ -6,7 +6,7 @@ const JOB_STATUSES = ['queued', 'running', 'succeeded', 'failed'];
 /**
  * Audit row per moderation attempt. One Article can have many ModerationJobs
  * across resubmissions / retries. We keep the raw model response so we can
- * audit verdicts later without re-querying GROQ.
+ * audit verdicts later without re-querying OpenAI.
  */
 const moderationJobSchema = new mongoose.Schema(
   {

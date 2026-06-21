@@ -8,7 +8,7 @@ import { MODERATION_QUEUE } from '../src/queues/moderation.js';
 
 /**
  * Confidence floor for treating a verdict as final. Borderline cases — and
- * everything from a fallback after a GROQ failure — drop to needs_review so
+ * everything from a fallback after an OpenAI failure — drop to needs_review so
  * a human can decide.
  */
 const CONFIDENCE_FLOOR = 0.6;
@@ -24,7 +24,7 @@ const TERMINAL_STATUSES = new Set([
  * Runs one moderation job:
  *   1. Load article; abort if it's no longer in `submitted`.
  *   2. Mark in_review and create ModerationJob audit row.
- *   3. Call GROQ.
+ *   3. Call OpenAI.
  *   4. Apply verdict to Article (publish / reject / needs_review) + persist
  *      audit details.
  *
@@ -131,7 +131,7 @@ async function applyVerdict(article, { verdict, confidence, reasons, suggestedTa
 /**
  * On final failure (all retries exhausted), route the article to needs_review
  * and log the audit row so a human can pick it up. Without this, a transient
- * GROQ outage would strand articles in `in_review` forever.
+ * OpenAI outage would strand articles in `in_review` forever.
  */
 async function handleTerminalFailure(jobData, err) {
   try {
