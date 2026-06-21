@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import { Mail } from 'lucide-react';
 import { Logo } from '@/components/ui/Logo';
+import { NewsletterSignup } from '@/components/NewsletterSignup';
 
 const cols = [
   {
@@ -40,6 +41,18 @@ export function Footer() {
     <footer className="relative border-t border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-950">
       <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-brand-400/40 to-transparent" />
       <div className="mx-auto max-w-7xl px-4 py-14 sm:px-6 lg:px-8">
+        <div className="mb-12 flex flex-col gap-5 rounded-2xl border border-slate-200 bg-slate-50/70 p-6 dark:border-slate-800 dark:bg-slate-900/40 md:flex-row md:items-center md:justify-between md:p-8">
+          <div className="max-w-md">
+            <h3 className="font-display text-lg font-bold tracking-tight text-slate-900 dark:text-slate-50">
+              The DevCrunch brief
+            </h3>
+            <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">
+              The sharpest stories on AI, startups, and security — in your inbox. No spam, unsubscribe anytime.
+            </p>
+          </div>
+          <NewsletterSignup source="footer" className="md:w-auto" />
+        </div>
+
         <div className="grid grid-cols-2 gap-10 md:grid-cols-6">
           <div className="col-span-2">
             <Logo size="lg" />

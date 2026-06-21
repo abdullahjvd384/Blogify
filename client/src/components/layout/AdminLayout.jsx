@@ -1,7 +1,10 @@
+import { Suspense } from 'react';
 import { NavLink, Outlet } from 'react-router-dom';
 import { Shield, Gavel, Users, Wallet, Coins, Banknote } from 'lucide-react';
 import { Header } from './Header';
 import { Footer } from './Footer';
+import { RouteFallback } from '@/components/RouteFallback';
+import { Analytics } from '@/components/Analytics';
 import { cn } from '@/lib/cn';
 
 const subItems = [
@@ -23,6 +26,7 @@ const linkClass = ({ isActive }) =>
 export function AdminLayout() {
   return (
     <div className="relative flex min-h-screen flex-col bg-white text-slate-900 dark:bg-slate-950 dark:text-slate-50">
+      <Analytics />
       <Header />
       <div className="border-b border-amber-200/70 bg-gradient-to-r from-amber-50 via-amber-50/60 to-transparent dark:border-amber-900/40 dark:from-amber-950/30 dark:via-amber-950/10">
         <div className="mx-auto flex max-w-7xl items-center gap-3 px-4 py-3 sm:px-6 lg:px-8">
@@ -42,7 +46,9 @@ export function AdminLayout() {
         </div>
       </div>
       <main className="flex-1">
-        <Outlet />
+        <Suspense fallback={<RouteFallback />}>
+          <Outlet />
+        </Suspense>
       </main>
       <Footer />
     </div>

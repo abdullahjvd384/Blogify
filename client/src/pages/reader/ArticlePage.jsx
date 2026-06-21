@@ -16,7 +16,7 @@ import {
   Tag as TagIcon,
   Crown,
 } from 'lucide-react';
-import { useArticle, useVote } from '@/features/articles/hooks';
+import { useArticle, useVote, useArticleFeed } from '@/features/articles/hooks';
 import { useIsBookmarked, useToggleBookmark } from '@/features/bookmarks/hooks';
 import { useReadTracker } from '@/features/reads/useReadTracker';
 import { useAuthStore } from '@/stores/authStore';
@@ -25,6 +25,7 @@ import { PaywallModal } from '@/components/PaywallModal';
 import { FollowButton } from '@/components/FollowButton';
 import { Avatar } from '@/components/Avatar';
 import { Seo } from '@/components/Seo';
+import { ArticleCard } from '@/components/ArticleCard';
 import { CommentSection } from '@/components/comments/CommentSection';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
@@ -61,6 +62,8 @@ export default function ArticlePage() {
   const user = useAuthStore((s) => s.user);
   const voteMut = useVote(slug);
   const qc = useQueryClient();
+  // Related articles by the piece's primary tag (falls back to latest while loading).
+  const relatedFeed = useArticleFeed({ tag: article?.tags?.[0], limit: 6 });
 
   const quotaError =
     error?.response?.status === 402 ? error.response.data?.error?.details : null;
@@ -470,6 +473,26 @@ export default function ArticlePage() {
             </Button>
           </div>
         </div>
+
+        {/* Related */}
+        {(() => {
+          const related = (relatedFeed.data?.pages?.[0]?.data || [])
+            .filter((a) => a.id !== article.id)
+            .slice(0, 3);
+          if (related.length === 0) return null;
+          return (
+            <section className="mt-16">
+              <h2 className="font-display text-xl font-bold tracking-tight text-slate-900 dark:text-slate-50">
+                More to read
+              </h2>
+              <div className="mt-5 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+                {related.map((a) => (
+                  <ArticleCard key={a.id} article={a} />
+                ))}
+              </div>
+            </section>
+          );
+        })()}
 
         {/* Responses */}
         <CommentSection articleId={article.id} count={stats.commentsCount || 0} />

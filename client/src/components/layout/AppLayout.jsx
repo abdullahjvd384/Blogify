@@ -1,7 +1,10 @@
+import { Suspense } from 'react';
 import { NavLink, Outlet } from 'react-router-dom';
 import { FileText, PlusCircle } from 'lucide-react';
 import { Header } from './Header';
 import { Footer } from './Footer';
+import { RouteFallback } from '@/components/RouteFallback';
+import { Analytics } from '@/components/Analytics';
 import { cn } from '@/lib/cn';
 
 const subItems = [
@@ -20,6 +23,7 @@ const linkClass = ({ isActive }) =>
 export function AppLayout() {
   return (
     <div className="relative flex min-h-screen flex-col bg-white text-slate-900 dark:bg-slate-950 dark:text-slate-50">
+      <Analytics />
       <Header />
       <div className="border-b border-slate-200 bg-white/70 backdrop-blur dark:border-slate-800 dark:bg-slate-900/40">
         <div className="mx-auto flex max-w-7xl items-center gap-2 px-4 py-3 sm:px-6 lg:px-8">
@@ -38,7 +42,9 @@ export function AppLayout() {
         </div>
       </div>
       <main className="flex-1">
-        <Outlet />
+        <Suspense fallback={<RouteFallback />}>
+          <Outlet />
+        </Suspense>
       </main>
       <Footer />
     </div>

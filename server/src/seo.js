@@ -131,6 +131,52 @@ export async function spaHandler(req, res, next) {
   return res.send(tmpl);
 }
 
+/** RSS 2.0 feed of the most recent published articles (for readers + aggregators). */
+export async function rssHandler(_req, res, next) {
+  try {
+    const articles = await Article.find({ status: 'published', deleted_at: null })
+      .select('title slug excerpt published_at')
+      .populate('author_id', 'name')
+      .sort({ published_at: -1 })
+      .limit(50)
+      .lean();
+
+    const items = articles
+      .map((a) => {
+        const url = `${BASE}/articles/${encodeURIComponent(a.slug)}`;
+        const date = new Date(a.published_at || Date.now()).toUTCString();
+        return (
+          `    <item>\n` +
+          `      <title>${esc(a.title)}</title>\n` +
+          `      <link>${esc(url)}</link>\n` +
+          `      <guid isPermaLink="true">${esc(url)}</guid>\n` +
+          `      <pubDate>${date}</pubDate>\n` +
+          (a.author_id?.name ? `      <dc:creator>${esc(a.author_id.name)}</dc:creator>\n` : '') +
+          `      <description><![CDATA[${a.excerpt || ''}]]></description>\n` +
+          `    </item>`
+        );
+      })
+      .join('\n');
+
+    const body =
+      `<?xml version="1.0" encoding="UTF-8"?>\n` +
+      `<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:dc="http://purl.org/dc/elements/1.1/">\n` +
+      `  <channel>\n` +
+      `    <title>DevCrunch</title>\n` +
+      `    <link>${BASE}</link>\n` +
+      `    <description>Sharp takes on AI, startups, and security — for people who build.</description>\n` +
+      `    <language>en</language>\n` +
+      `    <atom:link href="${BASE}/rss.xml" rel="self" type="application/rss+xml" />\n` +
+      `${items}\n` +
+      `  </channel>\n</rss>\n`;
+
+    res.set('Content-Type', 'application/rss+xml; charset=utf-8');
+    return res.send(body);
+  } catch (err) {
+    return next(err);
+  }
+}
+
 /** Dynamic sitemap of static routes + every published article. */
 export async function sitemapHandler(_req, res, next) {
   try {
