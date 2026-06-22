@@ -22,7 +22,7 @@ async function main() {
   logger.info('moderation worker started');
 
   let contentWorker;
-  if (env.XAI_API_KEY) {
+  if (env.OPENAI_API_KEY) {
     contentWorker = startContentWorker();
     logger.info('auto-content worker started');
     if (env.AUTO_CONTENT_ENABLED) {

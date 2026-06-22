@@ -35,16 +35,13 @@ const envSchema = z.object({
     .transform((v) => (typeof v === 'string' ? v === 'true' : v))
     .default(false),
 
-  // OpenAI powers AI moderation. Optional so the app boots without it; when unset
-  // the worker routes every article to needs_review for manual approval.
+  // OpenAI powers AI moderation AND the automated content pipeline (web-search
+  // trend research + article writing). Optional so the app boots without it.
   OPENAI_API_KEY: z.string().optional(),
   OPENAI_MODERATION_MODEL: z.string().default('gpt-4o-mini'),
-
-  // Grok (xAI) powers the automated content pipeline: live-search trend research
-  // + article writing. Optional so the app boots without it.
-  XAI_API_KEY: z.string().optional(),
-  // Must be a tool-capable model (the Responses web_search/x_search tools need grok-4+).
-  XAI_MODEL: z.string().default('grok-4'),
+  // Model for auto-content research (web_search tool) + writing. Use a capable
+  // model for quality (gpt-4o); drop to gpt-4o-mini to cut cost.
+  OPENAI_CONTENT_MODEL: z.string().default('gpt-4o'),
 
   // Unsplash (article imagery). Used by the seeder and the auto-content pipeline.
   UNSPLASH_ACCESS_KEY: z.string().optional(),

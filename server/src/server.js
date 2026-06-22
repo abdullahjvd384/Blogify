@@ -28,10 +28,11 @@ async function main() {
     inlineWorker = startModerationWorker();
     logger.info('moderation worker started (in-process)');
 
-    // Automated article pipeline (Grok research + write -> auto publish). The
-    // worker runs whenever Grok is configured (so the admin "generate now"
-    // trigger works); the recurring schedule is gated on AUTO_CONTENT_ENABLED.
-    if (env.XAI_API_KEY) {
+    // Automated article pipeline (OpenAI web-search research + write -> auto
+    // publish). The worker runs whenever the content AI is configured (so the
+    // admin "generate now" trigger works); the recurring schedule is gated on
+    // AUTO_CONTENT_ENABLED.
+    if (env.OPENAI_API_KEY) {
       contentWorker = startContentWorker();
       logger.info('auto-content worker started (in-process)');
       if (env.AUTO_CONTENT_ENABLED) {

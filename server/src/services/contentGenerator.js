@@ -5,7 +5,7 @@ import { sanitizeArticleHtml } from '../utils/sanitizeHtml.js';
 import { htmlToText } from '../utils/htmlToText.js';
 import { logger } from '../config/logger.js';
 import { env } from '../config/env.js';
-import { researchTrendingTopic, writeArticle, isGrokConfigured } from './grok.js';
+import { researchTrendingTopic, writeArticle, isContentAIConfigured } from './contentAI.js';
 import { buildArticleImagery } from './unsplash.js';
 import { moderateArticle } from './openai.js';
 
@@ -58,9 +58,9 @@ async function pickAuthor(category) {
  * `needs_review` (admin queue) instead of going live.
  */
 export async function generateOneArticle() {
-  if (!isGrokConfigured()) {
-    logger.warn('auto-content: XAI_API_KEY not set — skipping');
-    return { skipped: true, reason: 'grok_not_configured' };
+  if (!isContentAIConfigured()) {
+    logger.warn('auto-content: OPENAI_API_KEY not set — skipping');
+    return { skipped: true, reason: 'ai_not_configured' };
   }
 
   // 1. Recent coverage for dedup / avoid-list
