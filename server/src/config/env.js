@@ -43,7 +43,8 @@ const envSchema = z.object({
   // Grok (xAI) powers the automated content pipeline: live-search trend research
   // + article writing. Optional so the app boots without it.
   XAI_API_KEY: z.string().optional(),
-  XAI_MODEL: z.string().default('grok-3'),
+  // Must be a tool-capable model (the Responses web_search/x_search tools need grok-4+).
+  XAI_MODEL: z.string().default('grok-4'),
 
   // Unsplash (article imagery). Used by the seeder and the auto-content pipeline.
   UNSPLASH_ACCESS_KEY: z.string().optional(),
