@@ -40,8 +40,22 @@ const OPTIONS = {
   // Strip everything not explicitly allowed (drops <script>, <style>, on* handlers).
   disallowedTagsMode: 'discard',
   transformTags: {
-    // Force external links to be safe (no tabnabbing, no SEO juice on UGC).
-    a: sanitizeHtmlLib.simpleTransform('a', { rel: 'noopener noreferrer nofollow', target: '_blank' }),
+    // Internal links (relative paths, in-page anchors, or our own domain) stay
+    // followable and same-tab so internal linking passes SEO equity and reads
+    // as natural navigation. External links are forced safe: no tabnabbing and
+    // no SEO juice leaked onto user-generated content.
+    a: (tagName, attribs) => {
+      const href = attribs.href || '';
+      const isInternal =
+        href.startsWith('/') ||
+        href.startsWith('#') ||
+        /^https?:\/\/(www\.)?devcrunch\.tech(\/|$)/i.test(href);
+      const rel = isInternal ? 'noopener' : 'noopener noreferrer nofollow';
+      const next = { ...attribs, rel };
+      if (isInternal) delete next.target;
+      else next.target = '_blank';
+      return { tagName: 'a', attribs: next };
+    },
   },
 };
 

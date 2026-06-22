@@ -15,15 +15,20 @@ const DEFAULT_IMAGE = `${BASE}/og-image.png`;
  */
 export function Seo({
   title,
+  metaTitle,
   description,
   path,
   image,
+  imageAlt,
   type = 'website',
   publishedTime,
   author,
   noindex = false,
 }) {
-  const fullTitle = title ? `${title} · ${SITE}` : DEFAULT_TITLE;
+  // metaTitle is the SEO-tuned <title> (kept short so it doesn't truncate in
+  // search results); social cards keep the full editorial title + brand.
+  const socialTitle = title ? `${title} · ${SITE}` : DEFAULT_TITLE;
+  const fullTitle = metaTitle?.trim() || socialTitle;
   const desc = (description || DEFAULT_DESC).slice(0, 300);
   const url = path ? `${BASE}${path}` : BASE;
   const img = image || DEFAULT_IMAGE;
@@ -37,15 +42,17 @@ export function Seo({
 
       <meta property="og:type" content={type} />
       <meta property="og:site_name" content={SITE} />
-      <meta property="og:title" content={fullTitle} />
+      <meta property="og:title" content={socialTitle} />
       <meta property="og:description" content={desc} />
       <meta property="og:url" content={url} />
       <meta property="og:image" content={img} />
+      {imageAlt && <meta property="og:image:alt" content={imageAlt} />}
 
       <meta name="twitter:card" content="summary_large_image" />
-      <meta name="twitter:title" content={fullTitle} />
+      <meta name="twitter:title" content={socialTitle} />
       <meta name="twitter:description" content={desc} />
       <meta name="twitter:image" content={img} />
+      {imageAlt && <meta name="twitter:image:alt" content={imageAlt} />}
 
       {type === 'article' && publishedTime && (
         <meta property="article:published_time" content={publishedTime} />

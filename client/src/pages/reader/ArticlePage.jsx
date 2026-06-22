@@ -243,9 +243,11 @@ export default function ArticlePage() {
     <div className="relative">
       <Seo
         title={article.title}
+        metaTitle={article.metaTitle}
         description={article.excerpt}
         path={`/articles/${slug}`}
         image={article.coverImageUrl}
+        imageAlt={article.coverImageAlt}
         type="article"
         publishedTime={date ? new Date(date).toISOString() : undefined}
         author={authorName}
@@ -299,7 +301,7 @@ export default function ArticlePage() {
             <div className="mt-8 overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-800">
               <img
                 src={article.coverImageUrl}
-                alt=""
+                alt={article.coverImageAlt || article.title}
                 className="block w-full"
                 loading="lazy"
               />

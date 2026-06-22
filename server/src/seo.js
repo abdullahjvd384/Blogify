@@ -32,7 +32,19 @@ function esc(s = '') {
     .replace(/"/g, '&quot;');
 }
 
-function metaBlock({ title, description, url, image, type = 'website', publishedTime, author, jsonLd }) {
+function metaBlock({
+  title,
+  ogTitle,
+  description,
+  url,
+  image,
+  imageAlt,
+  type = 'website',
+  publishedTime,
+  author,
+  jsonLd,
+}) {
+  const social = ogTitle || title;
   const lines = [
     '<!--SEO-->',
     `<title>${esc(title)}</title>`,
@@ -40,14 +52,16 @@ function metaBlock({ title, description, url, image, type = 'website', published
     `<link rel="canonical" href="${esc(url)}" />`,
     `<meta property="og:type" content="${esc(type)}" />`,
     `<meta property="og:site_name" content="DevCrunch" />`,
-    `<meta property="og:title" content="${esc(title)}" />`,
+    `<meta property="og:title" content="${esc(social)}" />`,
     `<meta property="og:description" content="${esc(description)}" />`,
     `<meta property="og:url" content="${esc(url)}" />`,
     image ? `<meta property="og:image" content="${esc(image)}" />` : '',
+    image && imageAlt ? `<meta property="og:image:alt" content="${esc(imageAlt)}" />` : '',
     `<meta name="twitter:card" content="summary_large_image" />`,
-    `<meta name="twitter:title" content="${esc(title)}" />`,
+    `<meta name="twitter:title" content="${esc(social)}" />`,
     `<meta name="twitter:description" content="${esc(description)}" />`,
     image ? `<meta name="twitter:image" content="${esc(image)}" />` : '',
+    image && imageAlt ? `<meta name="twitter:image:alt" content="${esc(imageAlt)}" />` : '',
     publishedTime ? `<meta property="article:published_time" content="${esc(publishedTime)}" />` : '',
     author ? `<meta property="article:author" content="${esc(author)}" />` : '',
     jsonLd ? `<script type="application/ld+json">${jsonLd}</script>` : '',
@@ -56,23 +70,59 @@ function metaBlock({ title, description, url, image, type = 'website', published
   return lines.filter(Boolean).join('\n    ');
 }
 
-function articleJsonLd({ title, description, image, url, publishedTime, modifiedTime, author }) {
-  const data = {
-    '@context': 'https://schema.org',
+/** Coarse content section from tags, for schema.org articleSection + breadcrumbs. */
+function sectionFor(tags = []) {
+  const t = tags.join(' ');
+  if (/security|privacy|ransomware|phishing|supply-chain|identity|vulnerabilit|surveillance|data-broker|encryption|zero-trust|infostealer|sbom|secrets/.test(t))
+    return 'Security';
+  if (/funding|venture|startup|founder|saas|go-to-market|pricing|ipo|bootstrap|valuation|seed|acqui|megaround/.test(t))
+    return 'Startups';
+  return 'AI';
+}
+
+function articleJsonLd({
+  title,
+  description,
+  image,
+  url,
+  publishedTime,
+  modifiedTime,
+  author,
+  authorUrl,
+  tags = [],
+  section,
+  wordCount,
+}) {
+  const article = {
     '@type': 'Article',
     headline: title,
     description,
     image: image ? [image] : undefined,
     datePublished: publishedTime || undefined,
     dateModified: modifiedTime || publishedTime || undefined,
-    author: author ? { '@type': 'Person', name: author } : undefined,
+    author: author
+      ? { '@type': 'Person', name: author, url: authorUrl || undefined }
+      : undefined,
     publisher: {
       '@type': 'Organization',
       name: 'DevCrunch',
       logo: { '@type': 'ImageObject', url: `${BASE}/favicon.svg` },
     },
+    keywords: tags.length ? tags.join(', ') : undefined,
+    articleSection: section || undefined,
+    wordCount: wordCount || undefined,
+    inLanguage: 'en-US',
     mainEntityOfPage: url,
   };
+  const breadcrumb = {
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'Home', item: BASE },
+      { '@type': 'ListItem', position: 2, name: 'Articles', item: `${BASE}/articles` },
+      { '@type': 'ListItem', position: 3, name: title, item: url },
+    ],
+  };
+  const data = { '@context': 'https://schema.org', '@graph': [article, breadcrumb] };
   // JSON.stringify drops undefined keys; safe to embed (no </script> in our data).
   return JSON.stringify(data).replace(/</g, '\\u003c');
 }
@@ -92,13 +142,17 @@ export async function spaHandler(req, res, next) {
     try {
       const slug = decodeURIComponent(match[1]);
       const article = await Article.findOne({ slug, status: 'published', deleted_at: null })
-        .populate('author_id', 'name')
+        .populate('author_id', 'name username')
         .lean();
       if (article) {
-        const title = `${article.title} · DevCrunch`;
+        // <title> uses the SEO-tuned meta_title when set (keeps SERP titles from
+        // truncating); social cards keep the full editorial title.
+        const fullTitle = `${article.title} · DevCrunch`;
+        const title = article.meta_title?.trim() || fullTitle;
         const description = (article.excerpt || article.content_text || '').slice(0, 200);
         const url = `${BASE}/articles/${encodeURIComponent(slug)}`;
         const image = article.cover_image_url || `${BASE}/og-image.png`;
+        const imageAlt = article.cover_image_alt?.trim() || article.title;
         const publishedTime = article.published_at
           ? new Date(article.published_at).toISOString()
           : undefined;
@@ -106,17 +160,36 @@ export async function spaHandler(req, res, next) {
           ? new Date(article.updated_at).toISOString()
           : undefined;
         const author = article.author_id?.name || 'DevCrunch';
+        const authorUrl = article.author_id?.username
+          ? `${BASE}/u/${article.author_id.username}`
+          : undefined;
+        const tags = article.tags || [];
+        const section = sectionFor(tags);
         const html = tmpl.replace(
           SEO_BLOCK,
           metaBlock({
             title,
+            ogTitle: fullTitle,
             description,
             url,
             image,
+            imageAlt,
             type: 'article',
             publishedTime,
             author,
-            jsonLd: articleJsonLd({ title, description, image, url, publishedTime, modifiedTime, author }),
+            jsonLd: articleJsonLd({
+              title: article.title,
+              description,
+              image,
+              url,
+              publishedTime,
+              modifiedTime,
+              author,
+              authorUrl,
+              tags,
+              section,
+              wordCount: article.word_count,
+            }),
           }),
         );
         res.set('Content-Type', 'text/html; charset=utf-8');

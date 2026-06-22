@@ -39,6 +39,11 @@ const articleSchema = new mongoose.Schema(
     title: { type: String, required: true, trim: true, maxlength: 200 },
     slug: { type: String, required: true, unique: true, index: true },
     excerpt: { type: String, default: '', maxlength: 280 },
+    // SEO overrides. meta_title drives the SERP <title> when the display title is
+    // too long to render without truncation; cover_image_alt feeds og:image:alt
+    // and the cover <img> alt. Both empty by default (fall back to title).
+    meta_title: { type: String, default: '', maxlength: 70 },
+    cover_image_alt: { type: String, default: '', maxlength: 160 },
     content: { type: String, default: '', maxlength: 200_000 },
     content_format: { type: String, enum: CONTENT_FORMATS, default: 'plain' },
     content_text: { type: String, default: '' },
