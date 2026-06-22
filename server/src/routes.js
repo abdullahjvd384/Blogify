@@ -15,6 +15,7 @@ import { notificationsRouter } from './modules/notifications/notifications.route
 import { tagsRouter } from './modules/tags/tags.routes.js';
 import { searchRouter } from './modules/search/search.routes.js';
 import { newsletterRouter } from './modules/newsletter/newsletter.routes.js';
+import { contentRouter } from './modules/content/content.routes.js';
 import {
   payoutsRouter,
   adminPayoutsRouter,
@@ -42,6 +43,7 @@ export function buildRouter() {
   api.use('/admin/withdrawals', adminWithdrawalsRouter);
   api.use('/payments', paymentsRouter);
   api.use('/admin/moderation', moderationRouter);
+  api.use('/admin/content', contentRouter);
   api.use('/admin/users', adminUsersRouter);
   api.use('/admin/payments', adminPaymentsRouter);
   return api;

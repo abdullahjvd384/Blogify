@@ -40,6 +40,24 @@ const envSchema = z.object({
   OPENAI_API_KEY: z.string().optional(),
   OPENAI_MODERATION_MODEL: z.string().default('gpt-4o-mini'),
 
+  // Grok (xAI) powers the automated content pipeline: live-search trend research
+  // + article writing. Optional so the app boots without it.
+  XAI_API_KEY: z.string().optional(),
+  XAI_MODEL: z.string().default('grok-3'),
+
+  // Unsplash (article imagery). Used by the seeder and the auto-content pipeline.
+  UNSPLASH_ACCESS_KEY: z.string().optional(),
+
+  // Automated daily article pipeline (Grok research + write -> auto publish with
+  // a safety/quality gate that falls back to needs_review). Off by default.
+  AUTO_CONTENT_ENABLED: z
+    .union([z.string(), z.boolean()])
+    .transform((v) => (typeof v === 'string' ? v === 'true' : v))
+    .default(false),
+  AUTO_CONTENT_CRON: z.string().default('0 9,18 * * *'),
+  AUTO_CONTENT_TZ: z.string().default('Asia/Karachi'),
+  AUTO_CONTENT_PER_RUN: z.coerce.number().int().min(1).max(5).default(1),
+
   JAZZCASH_MERCHANT_ID: z.string().optional(),
   JAZZCASH_PASSWORD: z.string().optional(),
   JAZZCASH_INTEGRITY_SALT: z.string().optional(),
