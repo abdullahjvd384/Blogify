@@ -9,4 +9,7 @@ export const env = Object.freeze({
   mode: import.meta.env.MODE,
   isDev: import.meta.env.DEV,
   isProd: import.meta.env.PROD,
+  // Memberships are on hold until a Pakistan-friendly payment processor is wired.
+  // Set VITE_PAYMENTS_ENABLED=true to switch the purchase UI back on.
+  paymentsEnabled: import.meta.env.VITE_PAYMENTS_ENABLED === 'true',
 });

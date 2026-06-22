@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import { usd as rs } from '@/lib/money';
 import { readApiError } from '@/lib/apiError';
+import { env } from '@/env';
 import { cn } from '@/lib/cn';
 
 const FREE_PERKS = [
@@ -48,6 +49,10 @@ export default function PricingPage() {
   const annualSavingPct = monthly ? Math.round((1 - annualMonthlyEquivalent / monthly) * 100) : 0;
 
   async function onJoin() {
+    if (!env.paymentsEnabled) {
+      toast('Memberships are coming soon — every story is free to read right now.');
+      return;
+    }
     if (!user) {
       navigate('/login', { state: { from: '/pricing' } });
       return;
@@ -74,6 +79,12 @@ export default function PricingPage() {
             Most stories are free. Become a member to unlock every member-only story — and put
             money directly in the pockets of the writers you read.
           </p>
+          {!env.paymentsEnabled && (
+            <div className="mx-auto mt-6 max-w-xl rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800 dark:border-amber-900/60 dark:bg-amber-950/40 dark:text-amber-200">
+              <strong>Memberships are coming soon.</strong> Every story on DevCrunch is free to
+              read right now — no account required.
+            </div>
+          )}
         </div>
 
         {/* Billing toggle */}
@@ -164,9 +175,13 @@ export default function PricingPage() {
                 <Button variant="secondary" className="w-full" disabled leftIcon={<Check />}>
                   Active
                 </Button>
-              ) : (
+              ) : env.paymentsEnabled ? (
                 <Button className="w-full" onClick={onJoin} isLoading={checkout.isPending} rightIcon={<ArrowRight />}>
                   Become a member
+                </Button>
+              ) : (
+                <Button variant="secondary" className="w-full" disabled leftIcon={<Crown />}>
+                  Coming soon
                 </Button>
               )}
             </div>
