@@ -1,5 +1,5 @@
 import { Worker } from 'bullmq';
-import { bullConnection } from '../src/queues/connection.js';
+import { bullConnection, WORKER_TUNING } from '../src/queues/connection.js';
 import { CONTENT_QUEUE } from '../src/queues/content.js';
 import { logger } from '../src/config/logger.js';
 import { generateOneArticle } from '../src/services/contentGenerator.js';
@@ -27,6 +27,7 @@ export function startContentWorker() {
   const worker = new Worker(CONTENT_QUEUE, processContentJob, {
     connection: bullConnection(),
     concurrency: 1,
+    ...WORKER_TUNING,
   });
   worker.on('completed', (job, result) =>
     logger.info({ jobId: job.id, result }, 'auto-content job completed'),
