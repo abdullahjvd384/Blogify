@@ -7,7 +7,7 @@ import { redis } from '../src/config/redis.js';
 import { env } from '../src/config/env.js';
 import { startModerationWorker } from './moderation.worker.js';
 import { startContentWorker } from './content.worker.js';
-import { scheduleContentJobs } from '../src/queues/content.js';
+import { scheduleContentJobs, scheduleNewsletterDigest } from '../src/queues/content.js';
 
 /**
  * BullMQ worker entrypoint. Connects Mongo (for model writes) and starts every
@@ -32,18 +32,30 @@ async function main() {
   logger.info('moderation worker started');
 
   let contentWorker;
-  if (env.OPENAI_API_KEY) {
+  // The content worker handles both auto-content generation and the daily
+  // newsletter digest (same queue), so start it when either is active.
+  if (env.OPENAI_API_KEY || env.NEWSLETTER_DIGEST_ENABLED) {
     contentWorker = startContentWorker();
-    logger.info('auto-content worker started');
-    if (env.AUTO_CONTENT_ENABLED) {
-      try {
-        await scheduleContentJobs();
-      } catch (err) {
-        logger.error(
-          { err: err.message },
-          'auto-content schedule registration failed (redis?) — will retry on next boot',
-        );
-      }
+    logger.info('content/newsletter worker started');
+  }
+  if (env.OPENAI_API_KEY && env.AUTO_CONTENT_ENABLED) {
+    try {
+      await scheduleContentJobs();
+    } catch (err) {
+      logger.error(
+        { err: err.message },
+        'auto-content schedule registration failed (redis?) — will retry on next boot',
+      );
+    }
+  }
+  if (env.NEWSLETTER_DIGEST_ENABLED) {
+    try {
+      await scheduleNewsletterDigest();
+    } catch (err) {
+      logger.error(
+        { err: err.message },
+        'newsletter digest schedule registration failed (redis?) — will retry on next boot',
+      );
     }
   }
 

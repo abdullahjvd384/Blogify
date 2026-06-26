@@ -64,6 +64,15 @@ const envSchema = z.object({
   AUTO_CONTENT_TZ: z.string().default('Asia/Karachi'),
   AUTO_CONTENT_PER_RUN: z.coerce.number().int().min(1).max(5).default(1),
 
+  // Daily newsletter digest: one email/subscriber bundling the day's DevCrunch
+  // articles. OFF by default so it never blasts real subscribers until enabled.
+  NEWSLETTER_DIGEST_ENABLED: z
+    .union([z.string(), z.boolean()])
+    .transform((v) => (typeof v === 'string' ? v === 'true' : v))
+    .default(false),
+  NEWSLETTER_DIGEST_CRON: z.string().default('0 20 * * *'),
+  NEWSLETTER_DIGEST_TZ: z.string().default('Asia/Karachi'),
+
   JAZZCASH_MERCHANT_ID: z.string().optional(),
   JAZZCASH_PASSWORD: z.string().optional(),
   JAZZCASH_INTEGRITY_SALT: z.string().optional(),

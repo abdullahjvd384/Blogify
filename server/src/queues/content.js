@@ -4,6 +4,9 @@ import { env } from '../config/env.js';
 import { logger } from '../config/logger.js';
 
 export const CONTENT_QUEUE = 'content';
+// Job name for the daily newsletter digest (processed by the content worker, so
+// it adds no extra Redis-polling connection).
+export const NEWSLETTER_DIGEST_JOB = 'newsletter-digest';
 
 let queue;
 
@@ -39,4 +42,22 @@ export async function scheduleContentJobs() {
 /** Enqueue an immediate generation run (manual admin trigger / testing). */
 export async function enqueueContentNow(count = 1) {
   return contentQueue().add('generate', { count, scheduled: false });
+}
+
+/** Register the once-daily newsletter digest (idempotent across restarts). */
+export async function scheduleNewsletterDigest() {
+  await contentQueue().upsertJobScheduler(
+    'newsletter-digest',
+    { pattern: env.NEWSLETTER_DIGEST_CRON, tz: env.NEWSLETTER_DIGEST_TZ },
+    { name: NEWSLETTER_DIGEST_JOB, data: { scheduled: true } },
+  );
+  logger.info(
+    { cron: env.NEWSLETTER_DIGEST_CRON, tz: env.NEWSLETTER_DIGEST_TZ },
+    'newsletter digest schedule registered',
+  );
+}
+
+/** Enqueue an immediate digest run (manual trigger / testing). */
+export async function enqueueDigestNow() {
+  return contentQueue().add(NEWSLETTER_DIGEST_JOB, { scheduled: false });
 }

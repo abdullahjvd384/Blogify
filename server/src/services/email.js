@@ -2,6 +2,7 @@ import { env } from '../config/env.js';
 import { logger } from '../config/logger.js';
 
 const RESEND_API = 'https://api.resend.com/emails';
+const RESEND_BATCH_API = 'https://api.resend.com/emails/batch';
 
 /**
  * Sends an email via Resend. If RESEND_API_KEY is not configured, logs the
@@ -20,7 +21,7 @@ function logDevLink({ to, subject, html, reason }) {
   );
 }
 
-export async function sendEmail({ to, subject, html, text }) {
+export async function sendEmail({ to, subject, html, text, headers }) {
   if (!env.RESEND_API_KEY) {
     logDevLink({ to, subject, html, reason: 'RESEND_API_KEY not set' });
     return { id: 'dev-' + Date.now() };
@@ -32,7 +33,14 @@ export async function sendEmail({ to, subject, html, text }) {
       Authorization: `Bearer ${env.RESEND_API_KEY}`,
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({ from: env.EMAIL_FROM, to, subject, html, text: text || htmlToText(html) }),
+    body: JSON.stringify({
+      from: env.EMAIL_FROM,
+      to,
+      subject,
+      html,
+      text: text || htmlToText(html),
+      ...(headers ? { headers } : {}),
+    }),
   });
 
   if (res.ok) return res.json();
@@ -54,6 +62,55 @@ export async function sendEmail({ to, subject, html, text }) {
   }
 
   throw new Error(`Resend send failed: ${res.status}`);
+}
+
+/**
+ * Sends many individualized emails via Resend's batch endpoint (up to 100 per
+ * call → no per-recipient rate-limit juggling). Each message carries its own
+ * to/subject/html/headers (so unsubscribe links are per-recipient). Best-effort
+ * and non-throwing — a mail failure must never crash a scheduled job.
+ *
+ * @param {Array<{to:string, subject:string, html:string, text?:string, headers?:object}>} messages
+ * @returns {Promise<{sent:number, failed:number, skipped:number}>}
+ */
+export async function sendBatchEmails(messages = []) {
+  const list = (messages || []).filter((m) => m && m.to);
+  if (!env.RESEND_API_KEY) {
+    logger.warn({ count: list.length }, 'email-dev: RESEND_API_KEY not set — batch not sent');
+    return { sent: 0, failed: 0, skipped: list.length };
+  }
+  const out = { sent: 0, failed: 0, skipped: 0 };
+  for (let i = 0; i < list.length; i += 100) {
+    const chunk = list.slice(i, i + 100).map((m) => ({
+      from: env.EMAIL_FROM,
+      to: m.to,
+      subject: m.subject,
+      html: m.html,
+      text: m.text || htmlToText(m.html),
+      ...(m.headers ? { headers: m.headers } : {}),
+    }));
+    try {
+      const res = await fetch(RESEND_BATCH_API, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${env.RESEND_API_KEY}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(chunk),
+      });
+      if (res.ok) {
+        out.sent += chunk.length;
+      } else {
+        const body = await res.text().catch(() => '');
+        logger.warn({ status: res.status, body: body.slice(0, 300) }, 'resend batch send failed');
+        out.failed += chunk.length;
+      }
+    } catch (err) {
+      logger.warn({ err: err.message }, 'resend batch send error');
+      out.failed += chunk.length;
+    }
+  }
+  return out;
 }
 
 /** Quick HTML-to-text fallback. Not perfect but good enough for plaintext part. */
@@ -172,7 +229,7 @@ export function passwordResetTemplate({ name, link }) {
   };
 }
 
-export function newsletterWelcomeTemplate() {
+export function newsletterWelcomeTemplate({ unsubscribeUrl } = {}) {
   return {
     subject: 'Welcome to The DevCrunch brief 🎉',
     html: shell({
@@ -187,7 +244,54 @@ export function newsletterWelcomeTemplate() {
         </table>` +
         p('No spam, no fluff — just signal. Start with our latest stories:') +
         btn(`${SITE}/articles`, 'Start reading') +
-        p(`<span style="font-size:13px;color:${BRAND.faint};">You're receiving this because you subscribed at devcrunch.tech. Not you? You can ignore this email.</span>`),
+        unsubscribeFooter(unsubscribeUrl),
+    }),
+  };
+}
+
+/** A compliant unsubscribe line for marketing emails (digest, welcome). */
+function unsubscribeFooter(unsubscribeUrl) {
+  if (!unsubscribeUrl) {
+    return p(`<span style="font-size:13px;color:${BRAND.faint};">You're receiving this because you subscribed at devcrunch.tech.</span>`);
+  }
+  return `<p style="margin:18px 0 0;color:${BRAND.faint};font-size:12px;line-height:1.6;">
+    You're receiving this because you subscribed at devcrunch.tech.
+    <a href="${escape(unsubscribeUrl)}" style="color:${BRAND.muted};text-decoration:underline;">Unsubscribe</a>.
+  </p>`;
+}
+
+/** One article block (cover + title + excerpt + read link) for the digest. */
+function digestArticleBlock(a) {
+  const url = `${SITE}/articles/${encodeURIComponent(a.slug)}`;
+  const cover = a.cover_image_url
+    ? `<a href="${url}"><img src="${escape(a.cover_image_url)}" alt="${escape(a.cover_image_alt || a.title)}" width="536" style="display:block;width:100%;max-width:536px;border-radius:10px;border:1px solid #e4e8e2;margin:0 0 12px;"></a>`
+    : '';
+  return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 22px;border-bottom:1px solid #eef0ec;padding-bottom:6px;">
+    <tr><td>
+      ${cover}
+      <a href="${url}" style="font-size:18px;font-weight:800;line-height:1.35;color:${BRAND.ink};text-decoration:none;">${escape(a.title)}</a>
+      ${a.excerpt ? `<p style="margin:8px 0 10px;color:${BRAND.muted};font-size:14px;line-height:1.6;">${escape(a.excerpt)}</p>` : ''}
+      <a href="${url}" style="color:${BRAND.accent};font-size:14px;font-weight:700;text-decoration:none;">Read the story →</a>
+    </td></tr>
+  </table>`;
+}
+
+/** Daily digest of the day's DevCrunch articles. */
+export function dailyDigestTemplate({ articles = [], unsubscribeUrl } = {}) {
+  const count = articles.length;
+  const subject =
+    count === 1
+      ? `${articles[0].title}`
+      : `The DevCrunch brief — ${count} new ${count === 1 ? 'story' : 'stories'}`;
+  return {
+    subject,
+    html: shell({
+      title: count === 1 ? 'Your DevCrunch brief' : `Your DevCrunch brief — ${count} new stories`,
+      preheader: count === 1 ? articles[0].title : `${count} fresh takes on AI, startups & security.`,
+      bodyHtml:
+        p('The latest from DevCrunch — sharp takes on AI, startups, and security:') +
+        articles.map(digestArticleBlock).join('') +
+        unsubscribeFooter(unsubscribeUrl),
     }),
   };
 }

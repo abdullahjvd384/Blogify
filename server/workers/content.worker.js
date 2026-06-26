@@ -1,8 +1,9 @@
 import { Worker } from 'bullmq';
 import { bullConnection, WORKER_TUNING } from '../src/queues/connection.js';
-import { CONTENT_QUEUE } from '../src/queues/content.js';
+import { CONTENT_QUEUE, NEWSLETTER_DIGEST_JOB } from '../src/queues/content.js';
 import { logger } from '../src/config/logger.js';
 import { generateOneArticle } from '../src/services/contentGenerator.js';
+import { sendDailyDigest } from '../src/services/newsletter.js';
 
 /**
  * Runs the auto-content pipeline `count` times. Each generation is wrapped so one
@@ -10,6 +11,12 @@ import { generateOneArticle } from '../src/services/contentGenerator.js';
  * duplicate post) — a failed slot is simply skipped until the next cron run.
  */
 async function processContentJob(job) {
+  // The content worker also runs the daily newsletter digest (same queue → no
+  // extra Redis connection). Branch on the job name.
+  if (job.name === NEWSLETTER_DIGEST_JOB) {
+    return sendDailyDigest();
+  }
+
   const count = Math.max(1, Math.min(5, Number(job.data?.count) || 1));
   const results = [];
   for (let i = 0; i < count; i++) {

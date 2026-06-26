@@ -11,7 +11,7 @@ import { redis, disconnectRedis } from './config/redis.js';
 import { createApp } from './app.js';
 import { startModerationWorker } from '../workers/moderation.worker.js';
 import { startContentWorker } from '../workers/content.worker.js';
-import { scheduleContentJobs } from './queues/content.js';
+import { scheduleContentJobs, scheduleNewsletterDigest } from './queues/content.js';
 
 async function main() {
   await connectDb();
@@ -45,16 +45,19 @@ async function main() {
       inlineWorker = startModerationWorker();
       logger.info('moderation worker started (in-process)');
 
-      // Automated article pipeline (OpenAI web-search research + write -> auto
-      // publish). The worker runs whenever the content AI is configured (so the
-      // admin "generate now" trigger works); the recurring schedule is gated on
-      // AUTO_CONTENT_ENABLED.
-      if (env.OPENAI_API_KEY) {
+      // The content worker handles both auto-content generation and the daily
+      // newsletter digest (same queue), so start it when either is active.
+      if (env.OPENAI_API_KEY || env.NEWSLETTER_DIGEST_ENABLED) {
         contentWorker = startContentWorker();
-        logger.info('auto-content worker started (in-process)');
-        if (env.AUTO_CONTENT_ENABLED) {
-          await scheduleContentJobs();
-        }
+        logger.info('content/newsletter worker started (in-process)');
+      }
+      // Auto-content recurring schedule is gated on AUTO_CONTENT_ENABLED.
+      if (env.OPENAI_API_KEY && env.AUTO_CONTENT_ENABLED) {
+        await scheduleContentJobs();
+      }
+      // Daily newsletter digest (off unless explicitly enabled).
+      if (env.NEWSLETTER_DIGEST_ENABLED) {
+        await scheduleNewsletterDigest();
       }
     } catch (err) {
       logger.error(
