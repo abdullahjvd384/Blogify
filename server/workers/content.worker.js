@@ -34,5 +34,11 @@ export function startContentWorker() {
   worker.on('failed', (job, err) =>
     logger.error({ jobId: job?.id, err: err?.message }, 'auto-content job failed'),
   );
+  // Connection/BullMQ errors (e.g. Redis over quota) must be handled or Node
+  // turns the unhandled 'error' event into an uncaughtException that kills the
+  // process. Log and let BullMQ reconnect on its own.
+  worker.on('error', (err) =>
+    logger.error({ err: err?.message }, 'auto-content worker error (redis/bullmq)'),
+  );
   return worker;
 }

@@ -15,30 +15,55 @@ import { scheduleContentJobs } from './queues/content.js';
 
 async function main() {
   await connectDb();
-  await redis.ping();
+
+  // Redis powers the BullMQ queues but must NOT be fatal to boot. If it's
+  // unreachable (e.g. Upstash over its monthly request quota), the web server
+  // should still start, serve content from Mongo, and pass the /healthz check.
+  // We only start the background workers when Redis actually answered; otherwise
+  // the app runs in degraded mode (no auto-content/moderation) rather than
+  // crash-looping the whole deploy.
+  let redisOk = false;
+  try {
+    await redis.ping();
+    redisOk = true;
+  } catch (err) {
+    logger.error(
+      { err: err.message },
+      'redis unavailable at boot — starting in degraded mode (background workers disabled)',
+    );
+  }
 
   const app = createApp();
   const server = http.createServer(app);
 
-  // Single-service mode: run the moderation worker inside the API process so one
-  // free web service handles both. For scale, run a dedicated `start:worker`.
+  // Single-service mode: run the workers inside the API process so one free web
+  // service handles both. For scale, run a dedicated `start:worker`.
   let inlineWorker;
   let contentWorker;
-  if (env.RUN_WORKER) {
-    inlineWorker = startModerationWorker();
-    logger.info('moderation worker started (in-process)');
+  if (env.RUN_WORKER && redisOk) {
+    try {
+      inlineWorker = startModerationWorker();
+      logger.info('moderation worker started (in-process)');
 
-    // Automated article pipeline (OpenAI web-search research + write -> auto
-    // publish). The worker runs whenever the content AI is configured (so the
-    // admin "generate now" trigger works); the recurring schedule is gated on
-    // AUTO_CONTENT_ENABLED.
-    if (env.OPENAI_API_KEY) {
-      contentWorker = startContentWorker();
-      logger.info('auto-content worker started (in-process)');
-      if (env.AUTO_CONTENT_ENABLED) {
-        await scheduleContentJobs();
+      // Automated article pipeline (OpenAI web-search research + write -> auto
+      // publish). The worker runs whenever the content AI is configured (so the
+      // admin "generate now" trigger works); the recurring schedule is gated on
+      // AUTO_CONTENT_ENABLED.
+      if (env.OPENAI_API_KEY) {
+        contentWorker = startContentWorker();
+        logger.info('auto-content worker started (in-process)');
+        if (env.AUTO_CONTENT_ENABLED) {
+          await scheduleContentJobs();
+        }
       }
+    } catch (err) {
+      logger.error(
+        { err: err.message },
+        'worker/schedule init failed — continuing without background jobs',
+      );
     }
+  } else if (env.RUN_WORKER && !redisOk) {
+    logger.warn('RUN_WORKER is set but Redis is unavailable — skipping worker startup');
   }
 
   server.listen(env.PORT, () => {

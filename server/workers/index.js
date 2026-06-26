@@ -16,7 +16,17 @@ import { scheduleContentJobs } from '../src/queues/content.js';
  */
 async function main() {
   await connectDb();
-  await redis.ping();
+
+  // Don't hard-fail (and crash-loop) if Redis is unreachable at boot — the
+  // workers retry on their own connection and recover when Redis comes back.
+  try {
+    await redis.ping();
+  } catch (err) {
+    logger.error(
+      { err: err.message },
+      'redis unavailable at worker boot — workers will retry until it recovers',
+    );
+  }
 
   const moderationWorker = startModerationWorker();
   logger.info('moderation worker started');
@@ -26,7 +36,14 @@ async function main() {
     contentWorker = startContentWorker();
     logger.info('auto-content worker started');
     if (env.AUTO_CONTENT_ENABLED) {
-      await scheduleContentJobs();
+      try {
+        await scheduleContentJobs();
+      } catch (err) {
+        logger.error(
+          { err: err.message },
+          'auto-content schedule registration failed (redis?) — will retry on next boot',
+        );
+      }
     }
   }
 
