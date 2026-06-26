@@ -32,6 +32,7 @@ import { Article } from '../server/src/models/Article.js';
 import { slugify } from '../server/src/utils/slug.js';
 import { sanitizeArticleHtml } from '../server/src/utils/sanitizeHtml.js';
 import { htmlToText } from '../server/src/utils/htmlToText.js';
+import { humanize, insertInternalLinks } from '../server/src/utils/internalLinks.js';
 
 const DRY = process.argv.includes('--dry');
 const LIMIT = (() => {
@@ -40,7 +41,6 @@ const LIMIT = (() => {
 })();
 
 const WORDS_PER_MINUTE = 220;
-const MAX_LINKS = 3;
 
 // ---------------------------------------------------------------- category map
 // Mirrors scripts/seed-devcrunch.js so we know each article's topic cluster.
@@ -98,17 +98,6 @@ function computeMetaTitle(title, slug) {
 }
 
 // ---------------------------------------------------------------- alt text
-const ACRONYMS = new Set(['ai', 'llm', 'rag', 'mcp', 'sbom', 'slsa', 'ipo', 'saas', 'plg', 'cspm', 'cnapp', 'iac', 'gdpr', 'ccpa', 'mfa', 'vpn', 'raas', 'aws', 'doj', 'eu', 'us', 'ci', 'cd', 'fido2', 'section', 'drop']);
-function humanize(tag = '') {
-  return String(tag)
-    .split('-')
-    .map((w) => {
-      const lower = w.toLowerCase();
-      if (ACRONYMS.has(lower)) return w.toUpperCase();
-      return lower.charAt(0).toUpperCase() + lower.slice(1);
-    })
-    .join(' ');
-}
 const COVER_LEAD = { ai: 'Abstract illustration of', startups: 'Business illustration representing', security: 'Cybersecurity illustration of' };
 const INLINE_LEAD = { ai: 'Illustration related to', startups: 'Photo illustrating', security: 'Security concept:' };
 
@@ -124,8 +113,6 @@ function inlineAlt(category, tags, idx) {
 
 // ---------------------------------------------------------------- escaping
 const escAttr = (s = '') => String(s).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-const escHtml = (s = '') => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-const escRe = (s = '') => String(s).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
 // ---------------------------------------------------------------- transforms
 function rewriteImgAlts(html, category, tags) {
@@ -147,90 +134,6 @@ function relatedFor(current, all) {
     .map((a) => ({ ...a, score: a.tags.filter((t) => current.tags.includes(t)).length }))
     .sort((x, y) => y.score - x.score || x.slug.localeCompare(y.slug))
     .slice(0, 6);
-}
-
-// Multi-word topical phrases only — high precision, no awkward single-word links.
-function phrasesFor(c) {
-  const out = [];
-  for (const t of c.tags || []) {
-    const h = humanize(t).toLowerCase();
-    if (h.includes(' ') && h.length >= 8) out.push(h);
-  }
-  return out;
-}
-
-/**
- * Weaves up to MAX_LINKS contextual internal links into the body. Walks the HTML
- * as alternating text/tag tokens so links are only ever inserted into visible
- * paragraph text (never inside tags, anchors, headings, or figures). If too few
- * contextual matches are found, tops up with a trailing "Related reading" line.
- */
-function insertInternalLinks(html, current, candidates) {
-  if (/href="\/articles\//.test(html)) {
-    const existing = (html.match(/href="\/articles\//g) || []).length;
-    return { html, added: 0, links: [], skipped: true, total: existing };
-  }
-  const tokens = html.split(/(<[^>]+>)/);
-  let inP = false;
-  let aDepth = 0;
-  let headDepth = 0;
-  let figDepth = 0;
-  let paraIdx = -1;
-  const linkedSlugs = new Set();
-  const linkedParas = new Set();
-  const links = [];
-  let remaining = MAX_LINKS;
-
-  const cands = candidates.map((c) => ({ ...c, phrases: phrasesFor(c) })).filter((c) => c.phrases.length);
-
-  for (let i = 0; i < tokens.length && remaining > 0; i++) {
-    const tok = tokens[i];
-    if (tok.startsWith('<')) {
-      const m = /^<\s*(\/?)([a-zA-Z0-9]+)/.exec(tok);
-      if (m) {
-        const close = m[1] === '/';
-        const name = m[2].toLowerCase();
-        if (name === 'p') { if (close) inP = false; else { inP = true; paraIdx += 1; } }
-        else if (name === 'a') aDepth += close ? -1 : 1;
-        else if (/^h[1-6]$/.test(name)) headDepth += close ? -1 : 1;
-        else if (name === 'figure' || name === 'figcaption') figDepth += close ? -1 : 1;
-      }
-      continue;
-    }
-    if (!inP || aDepth > 0 || headDepth > 0 || figDepth > 0) continue;
-    if (linkedParas.has(paraIdx)) continue;
-
-    for (const c of cands) {
-      if (linkedSlugs.has(c.slug)) continue;
-      let hit = null;
-      for (const ph of c.phrases) {
-        const mm = new RegExp(`\\b(${escRe(ph)})\\b`, 'i').exec(tok);
-        if (mm) { hit = mm; break; }
-      }
-      if (hit) {
-        const s = hit.index;
-        const e = s + hit[0].length;
-        tokens[i] = `${tok.slice(0, s)}<a href="/articles/${c.slug}" data-internal="1">${hit[0]}</a>${tok.slice(e)}`;
-        linkedSlugs.add(c.slug);
-        linkedParas.add(paraIdx);
-        links.push({ slug: c.slug, anchor: hit[0] });
-        remaining -= 1;
-        break;
-      }
-    }
-  }
-
-  let out = tokens.join('');
-  if (linkedSlugs.size < MAX_LINKS) {
-    const extra = candidates.filter((c) => !linkedSlugs.has(c.slug)).slice(0, MAX_LINKS - linkedSlugs.size);
-    if (extra.length) {
-      const items = extra.map((c) => `<a href="/articles/${c.slug}" data-internal="1">${escHtml(c.title)}</a>`);
-      const joined = items.length === 1 ? items[0] : `${items.slice(0, -1).join(', ')} and ${items[items.length - 1]}`;
-      out += `<p><strong>Related reading:</strong> ${joined}.</p>`;
-      extra.forEach((c) => { linkedSlugs.add(c.slug); links.push({ slug: c.slug, anchor: `[related] ${c.title}` }); });
-    }
-  }
-  return { html: out, added: links.length, links, skipped: false, total: linkedSlugs.size };
 }
 
 // ---------------------------------------------------------------- main

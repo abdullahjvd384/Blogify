@@ -69,7 +69,10 @@ export function ArticleCard({ article, variant = 'default' }) {
               src={article.coverImageUrl}
               alt=""
               className="absolute inset-0 h-full w-full object-cover opacity-95"
+              width={400}
+              height={160}
               loading="lazy"
+              decoding="async"
             />
           ) : null}
           <div className="absolute inset-0 bg-grid opacity-20 mix-blend-overlay" />

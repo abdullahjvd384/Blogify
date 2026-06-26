@@ -5,7 +5,7 @@ const OPENAI_CHAT_URL = 'https://api.openai.com/v1/chat/completions';
 
 function parseJsonLoose(text) {
   if (!text) throw new Error('empty model output');
-  let t = String(text).trim().replace(/^```(?:json)?/i, '').replace(/```$/i, '').trim();
+  const t = String(text).trim().replace(/^```(?:json)?/i, '').replace(/```$/i, '').trim();
   try {
     return JSON.parse(t);
   } catch {
@@ -62,19 +62,23 @@ Use the web_search tool to find what is genuinely trending RIGHT NOW (today / th
   - "ai": AI models, tools, agents, AI business/regulation
   - "startups": startups, funding rounds, big-tech product/strategy moves
   - "security": cybersecurity breaches, defenses, privacy, policy
-Rules: pick something SPECIFIC and CURRENT (a real, recent development, not evergreen). Do NOT pick anything substantially in the "avoid" list. Only choose topics grounded in real, verifiable, recent sources.
+Rules: pick something SPECIFIC and CURRENT (a real, recent development, not evergreen). It must be a genuine time-sensitive event (launch, breach, funding, ruling, release) — a query that DESERVES freshness — not a topic chosen just because it trends. Do NOT pick anything substantially in the "avoid" list. Only choose topics grounded in real, verifiable, recent sources.
+Also decide the PRIMARY KEYWORD: the short head search query a real reader would type into Google for this story (e.g. "openai gpt-5 launch", "okta data breach"). 2-5 words, lowercase, includes the key entity (company/product).
 Respond with ONLY this JSON (no prose, no markdown fences):
-{"topic":"specific headline-style phrase","angle":"one sentence on the specific angle/why it matters now","category":"ai|startups|security","imageKeywords":["3-5 concrete visual Unsplash search terms"]}`;
+{"topic":"specific headline-style phrase","angle":"one sentence on the specific angle/why it matters now","category":"ai|startups|security","primaryKeyword":"2-5 word head search query","imageKeywords":["3-5 concrete visual Unsplash search terms"]}`;
 
-const WRITE_SYSTEM = `You are a senior tech journalist writing for DevCrunch. Write ONE original, high-quality, SEO-optimized article on the given topic.
+const WRITE_SYSTEM = `You are a senior tech journalist writing for DevCrunch. Write ONE original, high-quality, SEO-optimized news article on the given topic.
 Hard rules:
-- 900-1400 words. Sharp, knowledgeable, engaging.
-- Ground claims in real, verifiable facts. DO NOT fabricate specific statistics, exact figures, dates, or quotes. No invented quotes attributed to real people. If unsure, write qualitatively.
+- 900-1400 words. Sharp, knowledgeable, engaging. (There is no magic ranking word count — write what the story needs within this range.)
+- Ground claims in real, verifiable facts. DO NOT fabricate specific statistics, exact figures, dates, or quotes. No invented quotes attributed to real people. If unsure, write qualitatively. Add genuine analysis / "why it matters to builders" — do not just rephrase a press release.
+- SEO: use the PRIMARY KEYWORD verbatim (or near-verbatim) in the title, within the first 100 words, and in at least one <h2>. Use it naturally elsewhere — never stuff it.
+- Open with a strong news lede <p>: the first 1-2 sentences must answer who / what / when / why it matters, and contain the primary keyword.
 - HTML body using ONLY these tags: p, h2, h3, ul, ol, li, strong, em, blockquote, a (href ok). NO <h1>, NO <img>/<figure>, NO div/script/style.
-- Open with a strong <p> hook, then 3-5 <h2> sections (use <h3> where useful), at least one <ul> and one <blockquote>.
+- After the lede, add a one-paragraph <p> starting with "<strong>The gist:</strong>" — a 1-2 sentence TL;DR summary (good for featured snippets).
+- Then 3-5 <h2> sections (use <h3> where useful), at least one <ul> and one <blockquote>.
 - Insert EXACTLY 2 inline image placeholders as a literal <!--IMG--> on its own line, between sections (never at the very top, never adjacent).
 Respond with ONLY this JSON (no prose, no fences):
-{"title":"catchy specific headline <=70 chars","metaTitle":"SEO title <=60 chars","excerpt":"150-160 char meta description","tags":["4-6 lowercase tags"],"bodyHtml":"the article body"}`;
+{"title":"catchy specific headline <=70 chars, primary keyword near the front","metaTitle":"SEO title <=60 chars incl. primary keyword","excerpt":"150-160 char meta description incl. primary keyword + why it matters","tags":["4-6 lowercase tags"],"bodyHtml":"the article body"}`;
 
 /** Research one specific, currently-trending tech topic via OpenAI web search. */
 export async function researchTrendingTopic({ avoid = [] } = {}) {
@@ -101,7 +105,8 @@ export async function researchTrendingTopic({ avoid = [] } = {}) {
 }
 
 /** Write the full article for a finalized topic. */
-export async function writeArticle({ topic, angle, category }) {
+export async function writeArticle({ topic, angle, category, primaryKeyword }) {
+  const kw = (primaryKeyword || topic || '').toString().trim();
   const json = await openaiFetch(OPENAI_CHAT_URL, {
     model: env.OPENAI_CONTENT_MODEL,
     temperature: 0.6,
@@ -110,7 +115,7 @@ export async function writeArticle({ topic, angle, category }) {
       { role: 'system', content: WRITE_SYSTEM },
       {
         role: 'user',
-        content: `Topic: ${topic}\nAngle: ${angle}\nBeat: ${category}\n\nWrite the article now. Return only the JSON object.`,
+        content: `Topic: ${topic}\nAngle: ${angle}\nBeat: ${category}\nPrimary keyword (use verbatim in title, first 100 words, and one H2): ${kw}\n\nWrite the article now. Return only the JSON object.`,
       },
     ],
   });

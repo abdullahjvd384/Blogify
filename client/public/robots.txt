@@ -1,4 +1,8 @@
 User-agent: *
 Allow: /
+Disallow: /api/
+Disallow: /admin
+Disallow: /moderation
 
 Sitemap: https://devcrunch.tech/sitemap.xml
+Sitemap: https://devcrunch.tech/news-sitemap.xml

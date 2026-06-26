@@ -46,6 +46,14 @@ const envSchema = z.object({
   // Unsplash (article imagery). Used by the seeder and the auto-content pipeline.
   UNSPLASH_ACCESS_KEY: z.string().optional(),
 
+  // SEO: Google Search Console verification token (the value of the
+  // google-site-verification meta tag). Optional; tag is omitted when unset.
+  GOOGLE_SITE_VERIFICATION: z.string().optional(),
+  // SEO: IndexNow key (any 8-128 hex chars). When set, newly published articles
+  // are pinged to IndexNow (Bing/Yandex/Naver/Seznam/Yep — NOT Google) and the
+  // key file is served at /<key>.txt. Google indexes via the news sitemap+crawl.
+  INDEXNOW_KEY: z.string().optional(),
+
   // Automated daily article pipeline (Grok research + write -> auto publish with
   // a safety/quality gate that falls back to needs_review). Off by default.
   AUTO_CONTENT_ENABLED: z

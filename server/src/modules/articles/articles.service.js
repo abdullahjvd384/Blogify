@@ -320,7 +320,7 @@ export async function attachAuthors(docs) {
   const ids = [...new Set(docs.map((d) => d.author_id.toString()))];
   const users = await User.find(
     { _id: { $in: ids } },
-    { name: 1, role: 1, username: 1, avatar_url: 1 },
+    { name: 1, role: 1, username: 1, avatar_url: 1, bio: 1 },
   ).lean();
   const byId = new Map(users.map((u) => [u._id.toString(), u]));
   return docs.map((d) => {
@@ -334,6 +334,7 @@ export async function attachAuthors(docs) {
             role: u.role,
             username: u.username || null,
             avatarUrl: u.avatar_url || null,
+            bio: u.bio || null,
           }
         : null,
     };

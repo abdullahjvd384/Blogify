@@ -3,11 +3,13 @@ import { User } from '../models/User.js';
 import { uniqueSlug } from '../utils/slug.js';
 import { sanitizeArticleHtml } from '../utils/sanitizeHtml.js';
 import { htmlToText } from '../utils/htmlToText.js';
+import { insertInternalLinks, relatedByTags } from '../utils/internalLinks.js';
 import { logger } from '../config/logger.js';
 import { env } from '../config/env.js';
 import { researchTrendingTopic, writeArticle, isContentAIConfigured } from './contentAI.js';
 import { buildArticleImagery } from './unsplash.js';
 import { moderateArticle } from './openai.js';
+import { pingIndexNow } from './indexNow.js';
 
 // Rotate generated articles across the seeded writer personas, by beat.
 const AUTHOR_POOL = {
@@ -23,6 +25,13 @@ const FALLBACK_KEYWORDS = {
 
 const MIN_WORDS = 600;
 const CONFIDENCE_FLOOR = 0.6;
+
+// Clamp an SEO title to SERP length (<=60) without cutting a word in half.
+function clampMetaTitle(s = '') {
+  const t = String(s).trim();
+  if (t.length <= 60) return t;
+  return `${t.slice(0, 57).replace(/\s+\S*$/, '').trim()}…`;
+}
 
 function tokens(s = '') {
   return new Set(
@@ -81,7 +90,12 @@ export async function generateOneArticle() {
   }
 
   // 3. Write the article
-  const art = await writeArticle({ topic: topic.topic, angle: topic.angle, category });
+  const art = await writeArticle({
+    topic: topic.topic,
+    angle: topic.angle,
+    category,
+    primaryKeyword: topic.primaryKeyword,
+  });
   if (!art?.title || !art?.bodyHtml) {
     return { skipped: true, reason: 'empty_generation' };
   }
@@ -98,15 +112,27 @@ export async function generateOneArticle() {
     () => imagery.inlineFigures[i++] || '',
   );
 
-  // 5. Sanitize + stats
-  const safeHtml = sanitizeArticleHtml(bodyWithImages);
-  const text = htmlToText(safeHtml);
-  const wordCount = text.trim().split(/\s+/).filter(Boolean).length;
+  // 5. Tags (also drives internal-link candidate ranking)
   const tags = Array.from(
     new Set((art.tags || []).map((t) => String(t).toLowerCase().trim()).filter(Boolean)),
   ).slice(0, 8);
 
-  // 6. Safety + quality gate
+  // 6. Weave in contextual internal links to related published articles
+  // (link equity + discovery — same engine the seeder/seo-enhance uses).
+  const linkPool = await Article.find({ status: 'published', deleted_at: null })
+    .select('slug title tags')
+    .sort({ published_at: -1 })
+    .limit(80)
+    .lean();
+  const candidates = relatedByTags(tags, linkPool, 6);
+  const linkedHtml = insertInternalLinks(bodyWithImages, { tags }, candidates).html;
+
+  // 7. Sanitize + stats
+  const safeHtml = sanitizeArticleHtml(linkedHtml);
+  const text = htmlToText(safeHtml);
+  const wordCount = text.trim().split(/\s+/).filter(Boolean).length;
+
+  // 8. Safety + quality gate
   const reasons = [];
   if (wordCount < MIN_WORDS) reasons.push(`short:${wordCount}w`);
   if (!art.excerpt) reasons.push('no_excerpt');
@@ -147,16 +173,16 @@ export async function generateOneArticle() {
     modSnapshot.reasons = Array.from(new Set([...(modSnapshot.reasons || []), ...reasons]));
   }
 
-  // 7. Author + slug
+  // 9. Author + slug
   const author = await pickAuthor(category);
   if (!author) return { skipped: true, reason: 'no_writer' };
   const slug = await uniqueSlug(art.title, async (s) => Boolean(await Article.exists({ slug: s })));
 
-  // 8. Persist
+  // 10. Persist
   const doc = await Article.create({
     author_id: author._id,
     title: art.title,
-    meta_title: (art.metaTitle || '').slice(0, 70),
+    meta_title: clampMetaTitle(art.metaTitle || art.title),
     slug,
     excerpt: (art.excerpt || text.slice(0, 280)).slice(0, 280),
     content: safeHtml,
@@ -177,5 +203,13 @@ export async function generateOneArticle() {
     { id: doc._id.toString(), slug, status, category, author: author.username, wordCount },
     `auto-content: ${status}`,
   );
+
+  // Fast-index newly published articles (Bing/Yandex/etc. via IndexNow; Google
+  // picks them up via the news sitemap + crawl). Best-effort — never blocks.
+  if (status === 'published') {
+    const origin = (env.CLIENT_ORIGIN || 'https://devcrunch.tech').replace(/\/$/, '');
+    await pingIndexNow([`${origin}/articles/${encodeURIComponent(slug)}`]);
+  }
+
   return { status, title: art.title, slug, id: doc._id.toString(), category, reasons };
 }

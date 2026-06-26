@@ -32,6 +32,10 @@ function esc(s = '') {
     .replace(/"/g, '&quot;');
 }
 
+// Lets Google show large image previews (required for the big Discover/Top
+// Stories thumbnail) and full text/video snippets. Applied to every page.
+const ROBOTS_PREVIEW = 'max-image-preview:large, max-snippet:-1, max-video-preview:-1';
+
 function metaBlock({
   title,
   ogTitle,
@@ -41,14 +45,22 @@ function metaBlock({
   imageAlt,
   type = 'website',
   publishedTime,
+  modifiedTime,
   author,
   jsonLd,
 }) {
   const social = ogTitle || title;
+  // jsonLd may be a single string or an array of JSON strings (e.g. homepage
+  // emits Organization + WebSite; articles emit NewsArticle + BreadcrumbList).
+  const jsonLdBlocks = (Array.isArray(jsonLd) ? jsonLd : [jsonLd]).filter(Boolean);
   const lines = [
     '<!--SEO-->',
     `<title>${esc(title)}</title>`,
     `<meta name="description" content="${esc(description)}" />`,
+    `<meta name="robots" content="${ROBOTS_PREVIEW}" />`,
+    env.GOOGLE_SITE_VERIFICATION
+      ? `<meta name="google-site-verification" content="${esc(env.GOOGLE_SITE_VERIFICATION)}" />`
+      : '',
     `<link rel="canonical" href="${esc(url)}" />`,
     `<meta property="og:type" content="${esc(type)}" />`,
     `<meta property="og:site_name" content="DevCrunch" />`,
@@ -63,8 +75,9 @@ function metaBlock({
     image ? `<meta name="twitter:image" content="${esc(image)}" />` : '',
     image && imageAlt ? `<meta name="twitter:image:alt" content="${esc(imageAlt)}" />` : '',
     publishedTime ? `<meta property="article:published_time" content="${esc(publishedTime)}" />` : '',
+    modifiedTime ? `<meta property="article:modified_time" content="${esc(modifiedTime)}" />` : '',
     author ? `<meta property="article:author" content="${esc(author)}" />` : '',
-    jsonLd ? `<script type="application/ld+json">${jsonLd}</script>` : '',
+    ...jsonLdBlocks.map((j) => `<script type="application/ld+json">${j}</script>`),
     '<!--/SEO-->',
   ];
   return lines.filter(Boolean).join('\n    ');
@@ -80,6 +93,19 @@ function sectionFor(tags = []) {
   return 'AI';
 }
 
+/** Official DevCrunch social/profile URLs for sameAs (entity disambiguation). */
+const SAME_AS = [
+  'https://twitter.com/devcrunch',
+  'https://github.com/devcrunch',
+].filter(Boolean);
+
+/** Serialize a schema.org object graph for safe embedding in a <script> tag. */
+function ldJson(graph) {
+  const data = { '@context': 'https://schema.org', '@graph': graph };
+  // JSON.stringify drops undefined keys; escape < so a stray value can't close the tag.
+  return JSON.stringify(data).replace(/</g, '\\u003c');
+}
+
 function articleJsonLd({
   title,
   description,
@@ -89,19 +115,27 @@ function articleJsonLd({
   modifiedTime,
   author,
   authorUrl,
+  authorBio,
   tags = [],
   section,
   wordCount,
 }) {
+  // NewsArticle is the correct semantic subtype for a news story; Google still
+  // treats it as Article for rich results. headline must be <=110 chars.
   const article = {
-    '@type': 'Article',
-    headline: title,
+    '@type': 'NewsArticle',
+    headline: String(title).slice(0, 110),
     description,
     image: image ? [image] : undefined,
     datePublished: publishedTime || undefined,
     dateModified: modifiedTime || publishedTime || undefined,
     author: author
-      ? { '@type': 'Person', name: author, url: authorUrl || undefined }
+      ? {
+          '@type': 'Person',
+          name: author,
+          url: authorUrl || undefined,
+          description: authorBio || undefined,
+        }
       : undefined,
     publisher: {
       '@type': 'Organization',
@@ -122,9 +156,29 @@ function articleJsonLd({
       { '@type': 'ListItem', position: 3, name: title, item: url },
     ],
   };
-  const data = { '@context': 'https://schema.org', '@graph': [article, breadcrumb] };
-  // JSON.stringify drops undefined keys; safe to embed (no </script> in our data).
-  return JSON.stringify(data).replace(/</g, '\\u003c');
+  return ldJson([article, breadcrumb]);
+}
+
+/** Site-wide Organization + WebSite schema (homepage / non-article pages). */
+function siteJsonLd() {
+  const organization = {
+    '@type': 'Organization',
+    '@id': `${BASE}/#organization`,
+    name: 'DevCrunch',
+    url: `${BASE}/`,
+    logo: { '@type': 'ImageObject', url: `${BASE}/favicon.svg` },
+    description: 'Sharp, fast tech journalism on AI, startups, and cybersecurity, written by people who build.',
+    sameAs: SAME_AS.length ? SAME_AS : undefined,
+  };
+  const website = {
+    '@type': 'WebSite',
+    '@id': `${BASE}/#website`,
+    name: 'DevCrunch',
+    url: `${BASE}/`,
+    publisher: { '@id': `${BASE}/#organization` },
+    inLanguage: 'en-US',
+  };
+  return ldJson([organization, website]);
 }
 
 /**
@@ -142,7 +196,7 @@ export async function spaHandler(req, res, next) {
     try {
       const slug = decodeURIComponent(match[1]);
       const article = await Article.findOne({ slug, status: 'published', deleted_at: null })
-        .populate('author_id', 'name username')
+        .populate('author_id', 'name username bio')
         .lean();
       if (article) {
         // <title> uses the SEO-tuned meta_title when set (keeps SERP titles from
@@ -163,6 +217,7 @@ export async function spaHandler(req, res, next) {
         const authorUrl = article.author_id?.username
           ? `${BASE}/u/${article.author_id.username}`
           : undefined;
+        const authorBio = article.author_id?.bio || undefined;
         const tags = article.tags || [];
         const section = sectionFor(tags);
         const html = tmpl.replace(
@@ -176,6 +231,7 @@ export async function spaHandler(req, res, next) {
             imageAlt,
             type: 'article',
             publishedTime,
+            modifiedTime,
             author,
             jsonLd: articleJsonLd({
               title: article.title,
@@ -186,6 +242,7 @@ export async function spaHandler(req, res, next) {
               modifiedTime,
               author,
               authorUrl,
+              authorBio,
               tags,
               section,
               wordCount: article.word_count,
@@ -200,8 +257,22 @@ export async function spaHandler(req, res, next) {
     }
   }
 
+  // Non-article pages (homepage, feed, tag, etc.): keep the template's default
+  // meta but inject site-wide Organization + WebSite schema, the large-preview
+  // robots directive, and (optional) Search Console verification before the
+  // closing marker so they appear on every page.
+  const extras = [
+    `<meta name="robots" content="${ROBOTS_PREVIEW}" />`,
+    env.GOOGLE_SITE_VERIFICATION
+      ? `<meta name="google-site-verification" content="${esc(env.GOOGLE_SITE_VERIFICATION)}" />`
+      : '',
+    `<script type="application/ld+json">${siteJsonLd()}</script>`,
+  ]
+    .filter(Boolean)
+    .join('\n    ');
+  const html = tmpl.replace('<!--/SEO-->', `${extras}\n    <!--/SEO-->`);
   res.set('Content-Type', 'text/html; charset=utf-8');
-  return res.send(tmpl);
+  return res.send(html);
 }
 
 /** RSS 2.0 feed of the most recent published articles (for readers + aggregators). */
@@ -281,6 +352,58 @@ export async function sitemapHandler(_req, res, next) {
         )
         .join('\n') +
       `\n</urlset>\n`;
+
+    res.set('Content-Type', 'application/xml; charset=utf-8');
+    return res.send(body);
+  } catch (err) {
+    return next(err);
+  }
+}
+
+/**
+ * Google News sitemap. Per Google's spec it must contain ONLY articles created
+ * in the last 2 days and at most 1,000 entries; older URLs must be dropped.
+ * https://developers.google.com/search/docs/crawling-indexing/sitemaps/news-sitemap
+ */
+export async function newsSitemapHandler(_req, res, next) {
+  try {
+    const since = new Date(Date.now() - 48 * 60 * 60 * 1000);
+    const articles = await Article.find({
+      status: 'published',
+      deleted_at: null,
+      published_at: { $gte: since },
+    })
+      .select('title slug published_at')
+      .sort({ published_at: -1 })
+      .limit(1000)
+      .lean();
+
+    const items = articles
+      .map((a) => {
+        const url = `${BASE}/articles/${encodeURIComponent(a.slug)}`;
+        const pubDate = new Date(a.published_at || Date.now()).toISOString();
+        return (
+          `  <url>\n` +
+          `    <loc>${esc(url)}</loc>\n` +
+          `    <news:news>\n` +
+          `      <news:publication>\n` +
+          `        <news:name>DevCrunch</news:name>\n` +
+          `        <news:language>en</news:language>\n` +
+          `      </news:publication>\n` +
+          `      <news:publication_date>${pubDate}</news:publication_date>\n` +
+          `      <news:title>${esc(a.title)}</news:title>\n` +
+          `    </news:news>\n` +
+          `  </url>`
+        );
+      })
+      .join('\n');
+
+    const body =
+      `<?xml version="1.0" encoding="UTF-8"?>\n` +
+      `<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"\n` +
+      `        xmlns:news="http://www.google.com/schemas/sitemap-news/0.9">\n` +
+      `${items}\n` +
+      `</urlset>\n`;
 
     res.set('Content-Type', 'application/xml; charset=utf-8');
     return res.send(body);

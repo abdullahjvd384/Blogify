@@ -176,7 +176,7 @@ export default function ArticlePage() {
             Article not found
           </h1>
           <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
-            The article you're looking for may have been moved or unpublished.
+            The article you&apos;re looking for may have been moved or unpublished.
           </p>
           <Link to="/articles" className="mt-6">
             <Button variant="outline" leftIcon={<ArrowLeft />}>
@@ -299,11 +299,16 @@ export default function ArticlePage() {
 
           {article.coverImageUrl && (
             <div className="mt-8 overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-800">
+              {/* Hero is the LCP element: load eagerly + high priority, and set
+                  width/height so the browser reserves the 16:9 box (no CLS). */}
               <img
                 src={article.coverImageUrl}
                 alt={article.coverImageAlt || article.title}
                 className="block w-full"
-                loading="lazy"
+                width={1200}
+                height={675}
+                fetchPriority="high"
+                decoding="async"
               />
             </div>
           )}
@@ -453,8 +458,9 @@ export default function ArticlePage() {
                   authorName
                 )}
               </p>
+              {/* Author bio = an E-E-A-T trust signal; falls back to a CTA. */}
               <p className="text-xs text-slate-500 dark:text-slate-400">
-                Enjoyed this read? Tap upvote or share it with a friend.
+                {article.author?.bio || 'Enjoyed this read? Tap upvote or share it with a friend.'}
               </p>
             </div>
             {article.author && (

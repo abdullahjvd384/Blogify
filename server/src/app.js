@@ -14,7 +14,7 @@ import { notFound } from './middleware/notFound.js';
 import { asyncHandler } from './utils/asyncHandler.js';
 import { stripeWebhook } from './modules/payments/payments.controller.js';
 import { buildRouter } from './routes.js';
-import { spaHandler, sitemapHandler, rssHandler } from './seo.js';
+import { spaHandler, sitemapHandler, newsSitemapHandler, rssHandler } from './seo.js';
 
 export function createApp() {
   const app = express();
@@ -64,9 +64,18 @@ export function createApp() {
     const clientDist = path.resolve(fileURLToPath(import.meta.url), '../../../client/dist');
     // Dynamic sitemap + RSS (before static so they aren't shadowed by a missing file).
     app.get('/sitemap.xml', asyncHandler(sitemapHandler));
+    app.get('/news-sitemap.xml', asyncHandler(newsSitemapHandler));
     app.get('/rss.xml', asyncHandler(rssHandler));
-    // Static assets (JS/CSS/images, robots.txt, favicon, manifest). Serves
-    // index.html with default meta for "/".
+    // Homepage goes through the SEO injector (before static) so "/" gets the
+    // site-wide Organization/WebSite schema + verification meta, not the raw file.
+    app.get('/', asyncHandler(spaHandler));
+    // IndexNow ownership proof: serve the key as plain text at /<key>.txt.
+    if (env.INDEXNOW_KEY) {
+      app.get(`/${env.INDEXNOW_KEY}.txt`, (_req, res) =>
+        res.type('text/plain').send(env.INDEXNOW_KEY),
+      );
+    }
+    // Static assets (JS/CSS/images, robots.txt, favicon, manifest).
     app.use(express.static(clientDist));
     // SPA fallback with per-article server-side SEO meta injection.
     app.get('*', (req, res, next) => {
