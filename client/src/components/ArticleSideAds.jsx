@@ -1,35 +1,35 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useRef, useCallback } from 'react';
 
 const REFRESH_INTERVAL_MS = 45 * 60 * 1000;
 
-function buildAdSrcDoc(adKey, height, width, tick = 0) {
-  const containerId = `container-${adKey}`;
-  return `<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <style>
-      html,
-      body {
-        margin: 0;
-        padding: 0;
-        background: transparent;
-        overflow: hidden;
-      }
-      body {
-        width: ${width}px;
-        min-height: ${height}px;
-      }
-      #${containerId} {
-        width: ${width}px;
-        min-height: ${height}px;
-      }
-    </style>
-  </head>
-  <body>
-    <div id="${containerId}"></div>
-    <script>
+/**
+ * Injects Adsterra's atOptions + invoke.js directly into the page DOM.
+ *
+ * Why not srcDoc iframes?
+ *   srcDoc iframes have origin `null` and an empty document.referrer.
+ *   Adsterra's invoke.js validates the publisher domain via referrer / location
+ *   and silently refuses to serve ads when it can't identify the site.
+ *   Direct injection runs in the real page context, so domain checks pass.
+ */
+function AdSlot({ adKey, height, width }) {
+  const containerRef = useRef(null);
+  const refreshTimer = useRef(null);
+
+  const loadAd = useCallback(() => {
+    const container = containerRef.current;
+    if (!container) return;
+
+    // Clear previous ad content (for refresh)
+    container.innerHTML = '';
+
+    // Create the target div Adsterra writes into
+    const target = document.createElement('div');
+    target.id = `container-${adKey}`;
+    container.appendChild(target);
+
+    // Inject atOptions as a global (Adsterra reads window.atOptions)
+    const optionsScript = document.createElement('script');
+    optionsScript.textContent = `
       atOptions = {
         key: '${adKey}',
         format: 'iframe',
@@ -37,36 +37,35 @@ function buildAdSrcDoc(adKey, height, width, tick = 0) {
         width: ${width},
         params: {},
       };
-    </script>
-    <script src="https://www.highperformanceformat.com/${adKey}/invoke.js?t=${tick}"></script>
-  </body>
-</html>`;
-}
+    `;
+    container.appendChild(optionsScript);
 
-function AdSlot({ adKey, height, width }) {
-  const [refreshTick, setRefreshTick] = useState(0);
+    // Load invoke.js — cache-bust with timestamp so refreshes pull fresh ads
+    const invokeScript = document.createElement('script');
+    invokeScript.src = `https://www.highperformanceformat.com/${adKey}/invoke.js?t=${Date.now()}`;
+    invokeScript.async = true;
+    container.appendChild(invokeScript);
+  }, [adKey, height, width]);
 
   useEffect(() => {
-    const timerId = window.setInterval(() => {
-      setRefreshTick((value) => value + 1);
-    }, REFRESH_INTERVAL_MS);
+    loadAd();
 
-    return () => window.clearInterval(timerId);
-  }, []);
+    // Auto-refresh ads every 45 minutes
+    refreshTimer.current = window.setInterval(loadAd, REFRESH_INTERVAL_MS);
 
-  const srcDoc = useMemo(() => buildAdSrcDoc(adKey, height, width, refreshTick), [adKey, height, width, refreshTick]);
+    return () => {
+      window.clearInterval(refreshTimer.current);
+      // Clean up injected scripts on unmount
+      if (containerRef.current) {
+        containerRef.current.innerHTML = '';
+      }
+    };
+  }, [loadAd]);
 
   return (
-    <iframe
-      key={refreshTick}
-      title={`Advertisement ${adKey}`}
-      srcDoc={srcDoc}
-      width={width}
-      height={height}
-      scrolling="no"
-      loading="lazy"
-      className="block border-0"
-      style={{ width: `${width}px`, height: `${height}px` }}
+    <div
+      ref={containerRef}
+      style={{ minWidth: width, minHeight: height }}
     />
   );
 }
@@ -74,7 +73,7 @@ function AdSlot({ adKey, height, width }) {
 export function ArticleSideAds({ adKey, height = 600, width = 160 }) {
   return (
     <div className="hidden self-stretch xl:block">
-      <div className="sticky top-24 flex flex-col gap-6 pt-10">
+      <div className="sticky top-24 pt-10">
         <AdSlot adKey={adKey} height={height} width={width} />
       </div>
     </div>
