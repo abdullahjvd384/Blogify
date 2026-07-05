@@ -11,8 +11,9 @@ function enqueueAdLoad(task) {
   return loadQueue;
 }
 
-function AdSlot({ adKey, height, width, className }) {
+function AdSlot({ adKey, height, width }) {
   const containerRef = useRef(null);
+  const hostRef = useRef(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -23,12 +24,16 @@ function AdSlot({ adKey, height, width, className }) {
         () =>
           new Promise((resolve) => {
             const container = containerRef.current;
+            const host = hostRef.current;
             if (!container || cancelled) {
               resolve();
               return;
             }
 
             container.innerHTML = '';
+            if (host) {
+              host.querySelectorAll('script').forEach((node) => node.remove());
+            }
 
             const optionsScript = document.createElement('script');
             optionsScript.text = [
@@ -42,7 +47,7 @@ function AdSlot({ adKey, height, width, className }) {
             ].join('\n');
 
             const invokeScript = document.createElement('script');
-            invokeScript.async = true;
+            invokeScript.async = false;
             invokeScript.dataset.cfasync = 'false';
             invokeScript.src = `https://www.highperformanceformat.com/${adKey}/invoke.js`;
 
@@ -57,8 +62,10 @@ function AdSlot({ adKey, height, width, className }) {
             invokeScript.onload = finish;
             invokeScript.onerror = finish;
 
-            container.appendChild(optionsScript);
-            container.appendChild(invokeScript);
+            if (host) {
+              host.appendChild(optionsScript);
+              host.appendChild(invokeScript);
+            }
 
             refreshTimer = window.setTimeout(finish, 15000);
           }),
@@ -72,35 +79,28 @@ function AdSlot({ adKey, height, width, className }) {
       window.clearInterval(intervalId);
       if (refreshTimer) window.clearTimeout(refreshTimer);
       if (containerRef.current) containerRef.current.innerHTML = '';
+      if (hostRef.current) hostRef.current.querySelectorAll('script').forEach((node) => node.remove());
     };
   }, [adKey, height, width]);
 
   return (
-    <div className={cn('flex justify-center', className)}>
-      <div
-        ref={containerRef}
-        className="overflow-hidden rounded-2xl border border-slate-200 bg-white/80 shadow-sm dark:border-slate-800 dark:bg-slate-900/60"
-        style={{ width: `${width}px`, minHeight: `${height}px` }}
-      />
+    <div className="hidden self-start lg:block">
+      <div className="sticky top-24 flex justify-center">
+        <div ref={hostRef} className="flex flex-col items-center">
+          <div
+            ref={containerRef}
+            id={`container-${adKey}`}
+            className={cn(
+              'overflow-hidden rounded-2xl border border-slate-200 bg-white/80 shadow-sm dark:border-slate-800 dark:bg-slate-900/60',
+            )}
+            style={{ width: `${width}px`, minHeight: `${height}px` }}
+          />
+        </div>
+      </div>
     </div>
   );
 }
 
-export function ArticleSideAds() {
-  return (
-    <div className="hidden xl:block">
-      <div className="sticky top-24 flex flex-col gap-6 pt-10">
-        <AdSlot
-          adKey="066f1f55f129027cbafd0f9bb8a9f6e3"
-          height={600}
-          width={160}
-        />
-        <AdSlot
-          adKey="1bf428af68e46e36796dee21ffb31b14"
-          height={300}
-          width={160}
-        />
-      </div>
-    </div>
-  );
+export function ArticleSideAds(props) {
+  return <AdSlot {...props} />;
 }

@@ -263,7 +263,7 @@ export default function ArticlePage() {
 
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="grid gap-8 xl:grid-cols-[160px_minmax(0,1fr)_160px] xl:items-start">
-          <ArticleSideAds />
+          <ArticleSideAds adKey="066f1f55f129027cbafd0f9bb8a9f6e3" height={600} width={160} />
 
           <div>
             {/* Hero */}
@@ -513,7 +513,7 @@ export default function ArticlePage() {
             </article>
           </div>
 
-          <ArticleSideAds />
+          <ArticleSideAds adKey="1bf428af68e46e36796dee21ffb31b14" height={600} width={160} />
         </div>
       </div>
     </div>
