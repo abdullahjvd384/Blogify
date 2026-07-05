@@ -27,6 +27,7 @@ import { Avatar } from '@/components/Avatar';
 import { Seo } from '@/components/Seo';
 import { ArticleCard } from '@/components/ArticleCard';
 import { CommentSection } from '@/components/comments/CommentSection';
+import { ArticleSideAds } from '@/components/ArticleSideAds';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { Skeleton } from '@/components/ui/Skeleton';
@@ -260,251 +261,261 @@ export default function ArticlePage() {
         />
       </div>
 
-      {/* Hero */}
-      <header className="relative isolate overflow-hidden border-b border-slate-200 dark:border-slate-800">
-        <div className="pointer-events-none absolute inset-0 -z-10 bg-radial-fade" />
-        <div className="mx-auto max-w-3xl px-4 pb-12 pt-10 sm:px-6 sm:pb-16 sm:pt-14 lg:px-8">
-          <Link
-            to="/articles"
-            className="inline-flex items-center gap-1.5 text-sm font-medium text-slate-500 transition hover:text-brand-600 dark:text-slate-400 dark:hover:text-brand-300"
-          >
-            <ArrowLeft size={14} />
-            Back to feed
-          </Link>
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div className="grid gap-8 xl:grid-cols-[160px_minmax(0,1fr)_160px] xl:items-start">
+          <ArticleSideAds />
 
-          <div className="mt-6 flex flex-wrap items-center gap-1.5">
-            {article.memberOnly && (
-              <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide text-amber-700 dark:bg-amber-950/60 dark:text-amber-300">
-                <Crown size={12} /> Member-only
-              </span>
-            )}
-            {article.tags?.slice(0, 6).map((tag) => (
-              <Link key={tag} to={`/tag/${encodeURIComponent(tag)}`}>
-                <Badge variant="brand" leftIcon={<TagIcon />}>
-                  {tag}
-                </Badge>
-              </Link>
-            ))}
-          </div>
-
-          <h1 className="mt-4 font-display text-3xl font-bold tracking-tight text-slate-900 text-balance sm:text-5xl dark:text-slate-50">
-            {article.title}
-          </h1>
-
-          {article.excerpt && (
-            <p className="mt-4 text-lg leading-7 text-slate-600 text-pretty dark:text-slate-300">
-              {article.excerpt}
-            </p>
-          )}
-
-          {article.coverImageUrl && (
-            <div className="mt-8 overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-800">
-              {/* Hero is the LCP element: load eagerly + high priority, and set
-                  width/height so the browser reserves the 16:9 box (no CLS). */}
-              <img
-                src={article.coverImageUrl}
-                alt={article.coverImageAlt || article.title}
-                className="block w-full"
-                width={1200}
-                height={675}
-                fetchPriority="high"
-                decoding="async"
-              />
-            </div>
-          )}
-
-          <div className="mt-8 flex flex-wrap items-center gap-x-4 gap-y-3 border-t border-slate-200 pt-6 dark:border-slate-800">
-            <div className="flex items-center gap-3">
-              {article.author ? (
-                <Link to={profilePath(article.author)}>
-                  <Avatar user={article.author} size="md" />
+          <div>
+            {/* Hero */}
+            <header className="relative isolate overflow-hidden border-b border-slate-200 dark:border-slate-800">
+              <div className="pointer-events-none absolute inset-0 -z-10 bg-radial-fade" />
+              <div className="mx-auto max-w-3xl px-0 pb-12 pt-10 sm:pb-16 sm:pt-14 lg:px-0">
+                <Link
+                  to="/articles"
+                  className="inline-flex items-center gap-1.5 text-sm font-medium text-slate-500 transition hover:text-brand-600 dark:text-slate-400 dark:hover:text-brand-300"
+                >
+                  <ArrowLeft size={14} />
+                  Back to feed
                 </Link>
-              ) : (
-                <Avatar user={{ name: authorName }} size="md" />
-              )}
-              <div>
-                {article.author ? (
-                  <Link
-                    to={profilePath(article.author)}
-                    className="text-sm font-semibold text-slate-900 hover:text-brand-600 dark:text-slate-50 dark:hover:text-brand-300"
-                  >
-                    {authorName}
-                  </Link>
-                ) : (
-                  <p className="text-sm font-semibold text-slate-900 dark:text-slate-50">
-                    {authorName}
+
+                <div className="mt-6 flex flex-wrap items-center gap-1.5">
+                  {article.memberOnly && (
+                    <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide text-amber-700 dark:bg-amber-950/60 dark:text-amber-300">
+                      <Crown size={12} /> Member-only
+                    </span>
+                  )}
+                  {article.tags?.slice(0, 6).map((tag) => (
+                    <Link key={tag} to={`/tag/${encodeURIComponent(tag)}`}>
+                      <Badge variant="brand" leftIcon={<TagIcon />}>
+                        {tag}
+                      </Badge>
+                    </Link>
+                  ))}
+                </div>
+
+                <h1 className="mt-4 font-display text-3xl font-bold tracking-tight text-slate-900 text-balance sm:text-5xl dark:text-slate-50">
+                  {article.title}
+                </h1>
+
+                {article.excerpt && (
+                  <p className="mt-4 text-lg leading-7 text-slate-600 text-pretty dark:text-slate-300">
+                    {article.excerpt}
                   </p>
                 )}
-                {date && (
-                  <p className="flex items-center gap-1 text-xs text-slate-500 dark:text-slate-400">
-                    <Calendar size={11} />
-                    {new Date(date).toLocaleDateString(undefined, {
-                      month: 'short',
-                      day: 'numeric',
-                      year: 'numeric',
-                    })}
-                  </p>
+
+                {article.coverImageUrl && (
+                  <div className="mt-8 overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-800">
+                    {/* Hero is the LCP element: load eagerly + high priority, and set
+                        width/height so the browser reserves the 16:9 box (no CLS). */}
+                    <img
+                      src={article.coverImageUrl}
+                      alt={article.coverImageAlt || article.title}
+                      className="block w-full"
+                      width={1200}
+                      height={675}
+                      fetchPriority="high"
+                      decoding="async"
+                    />
+                  </div>
                 )}
+
+                <div className="mt-8 flex flex-wrap items-center gap-x-4 gap-y-3 border-t border-slate-200 pt-6 dark:border-slate-800">
+                  <div className="flex items-center gap-3">
+                    {article.author ? (
+                      <Link to={profilePath(article.author)}>
+                        <Avatar user={article.author} size="md" />
+                      </Link>
+                    ) : (
+                      <Avatar user={{ name: authorName }} size="md" />
+                    )}
+                    <div>
+                      {article.author ? (
+                        <Link
+                          to={profilePath(article.author)}
+                          className="text-sm font-semibold text-slate-900 hover:text-brand-600 dark:text-slate-50 dark:hover:text-brand-300"
+                        >
+                          {authorName}
+                        </Link>
+                      ) : (
+                        <p className="text-sm font-semibold text-slate-900 dark:text-slate-50">
+                          {authorName}
+                        </p>
+                      )}
+                      {date && (
+                        <p className="flex items-center gap-1 text-xs text-slate-500 dark:text-slate-400">
+                          <Calendar size={11} />
+                          {new Date(date).toLocaleDateString(undefined, {
+                            month: 'short',
+                            day: 'numeric',
+                            year: 'numeric',
+                          })}
+                        </p>
+                      )}
+                    </div>
+                    {article.author && (
+                      <FollowButton
+                        handle={article.author.username || article.author.id}
+                        size="sm"
+                        className="ml-1"
+                      />
+                    )}
+                  </div>
+
+                  <span className="hidden h-6 w-px bg-slate-200 dark:bg-slate-800 sm:inline-block" />
+
+                  <div className="flex items-center gap-4 text-xs text-slate-500 dark:text-slate-400">
+                    <span className="inline-flex items-center gap-1.5">
+                      <Clock size={13} />
+                      {article.estimatedReadMinutes || 1} min read
+                    </span>
+                    <span className="inline-flex items-center gap-1.5">
+                      <Eye size={13} />
+                      {stats.reads || 0} reads
+                    </span>
+                  </div>
+
+                  <div className="ml-auto flex items-center gap-1">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (!user) {
+                          toast.info('Sign in to save articles');
+                          return;
+                        }
+                        toggleBookmark.mutate(bookmarked);
+                      }}
+                      className={cn(
+                        'inline-flex h-9 w-9 items-center justify-center rounded-lg ring-1 ring-inset transition',
+                        bookmarked
+                          ? 'bg-amber-50 text-amber-600 ring-amber-200 dark:bg-amber-950/60 dark:text-amber-300 dark:ring-amber-900'
+                          : 'text-slate-500 ring-slate-200 hover:bg-slate-50 hover:text-slate-900 dark:text-slate-400 dark:ring-slate-800 dark:hover:bg-slate-800 dark:hover:text-slate-100',
+                      )}
+                      aria-label={bookmarked ? 'Remove bookmark' : 'Save article'}
+                    >
+                      <Bookmark size={15} fill={bookmarked ? 'currentColor' : 'none'} />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleCopy}
+                      className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-slate-500 ring-1 ring-inset ring-slate-200 transition hover:bg-slate-50 hover:text-slate-900 dark:text-slate-400 dark:ring-slate-800 dark:hover:bg-slate-800 dark:hover:text-slate-100"
+                      aria-label="Copy link"
+                    >
+                      <Copy size={15} />
+                    </button>
+                    <Button size="sm" variant="secondary" leftIcon={<Share2 />} onClick={handleShare}>
+                      Share
+                    </Button>
+                  </div>
+                </div>
+
+                <div className="mt-4 flex flex-wrap items-center gap-3">
+                  <VoteButtons
+                    upvotes={stats.upvotes || 0}
+                    downvotes={stats.downvotes || 0}
+                    myVote={article.myVote || 0}
+                    onVote={handleVote}
+                    disabled={!user}
+                    isPending={voteMut.isPending}
+                  />
+                  {!user && (
+                    <Link
+                      to="/login"
+                      className="text-xs text-slate-500 hover:underline dark:text-slate-400"
+                    >
+                      Sign in to vote
+                    </Link>
+                  )}
+                </div>
               </div>
-              {article.author && (
-                <FollowButton
-                  handle={article.author.username || article.author.id}
-                  size="sm"
-                  className="ml-1"
+            </header>
+
+            {/* Body */}
+            <article className="mx-auto max-w-3xl px-0 pb-20 pt-10 sm:pb-28 lg:px-0">
+              {article.contentFormat === 'html' ? (
+                <div
+                  className="article-body font-serif text-[1.18rem] leading-[1.8] tracking-[-0.003em] text-slate-800 dark:text-slate-200"
+                  // Content is sanitized server-side on save (allowlist + iframe host check).
+                  dangerouslySetInnerHTML={{ __html: article.content }}
                 />
+              ) : (
+                <div className="article-body whitespace-pre-wrap font-serif text-[1.18rem] leading-[1.8] tracking-[-0.003em] text-slate-800 dark:text-slate-200">
+                  {article.content}
+                </div>
               )}
-            </div>
 
-            <span className="hidden h-6 w-px bg-slate-200 dark:bg-slate-800 sm:inline-block" />
-
-            <div className="flex items-center gap-4 text-xs text-slate-500 dark:text-slate-400">
-              <span className="inline-flex items-center gap-1.5">
-                <Clock size={13} />
-                {article.estimatedReadMinutes || 1} min read
-              </span>
-              <span className="inline-flex items-center gap-1.5">
-                <Eye size={13} />
-                {stats.reads || 0} reads
-              </span>
-            </div>
-
-            <div className="ml-auto flex items-center gap-1">
-              <button
-                type="button"
-                onClick={() => {
-                  if (!user) {
-                    toast.info('Sign in to save articles');
-                    return;
-                  }
-                  toggleBookmark.mutate(bookmarked);
-                }}
-                className={cn(
-                  'inline-flex h-9 w-9 items-center justify-center rounded-lg ring-1 ring-inset transition',
-                  bookmarked
-                    ? 'bg-amber-50 text-amber-600 ring-amber-200 dark:bg-amber-950/60 dark:text-amber-300 dark:ring-amber-900'
-                    : 'text-slate-500 ring-slate-200 hover:bg-slate-50 hover:text-slate-900 dark:text-slate-400 dark:ring-slate-800 dark:hover:bg-slate-800 dark:hover:text-slate-100',
-                )}
-                aria-label={bookmarked ? 'Remove bookmark' : 'Save article'}
-              >
-                <Bookmark size={15} fill={bookmarked ? 'currentColor' : 'none'} />
-              </button>
-              <button
-                type="button"
-                onClick={handleCopy}
-                className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-slate-500 ring-1 ring-inset ring-slate-200 transition hover:bg-slate-50 hover:text-slate-900 dark:text-slate-400 dark:ring-slate-800 dark:hover:bg-slate-800 dark:hover:text-slate-100"
-                aria-label="Copy link"
-              >
-                <Copy size={15} />
-              </button>
-              <Button size="sm" variant="secondary" leftIcon={<Share2 />} onClick={handleShare}>
-                Share
-              </Button>
-            </div>
-          </div>
-
-          <div className="mt-4 flex flex-wrap items-center gap-3">
-            <VoteButtons
-              upvotes={stats.upvotes || 0}
-              downvotes={stats.downvotes || 0}
-              myVote={article.myVote || 0}
-              onVote={handleVote}
-              disabled={!user}
-              isPending={voteMut.isPending}
-            />
-            {!user && (
-              <Link
-                to="/login"
-                className="text-xs text-slate-500 hover:underline dark:text-slate-400"
-              >
-                Sign in to vote
-              </Link>
-            )}
-          </div>
-        </div>
-      </header>
-
-      {/* Body */}
-      <article className="mx-auto max-w-3xl px-4 pb-20 pt-10 sm:px-6 sm:pb-28 lg:px-8">
-        {article.contentFormat === 'html' ? (
-          <div
-            className="article-body font-serif text-[1.18rem] leading-[1.8] tracking-[-0.003em] text-slate-800 dark:text-slate-200"
-            // Content is sanitized server-side on save (allowlist + iframe host check).
-            dangerouslySetInnerHTML={{ __html: article.content }}
-          />
-        ) : (
-          <div className="article-body whitespace-pre-wrap font-serif text-[1.18rem] leading-[1.8] tracking-[-0.003em] text-slate-800 dark:text-slate-200">
-            {article.content}
-          </div>
-        )}
-
-        {/* Footer engagement */}
-        <div className="mt-14 flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-slate-200 bg-slate-50/60 p-5 dark:border-slate-800 dark:bg-slate-900/40">
-          <div className="flex items-center gap-3">
-            {article.author ? (
-              <Link to={profilePath(article.author)}>
-                <Avatar user={article.author} size="md" />
-              </Link>
-            ) : (
-              <Avatar user={{ name: authorName }} size="md" />
-            )}
-            <div>
-              <p className="text-sm font-semibold text-slate-900 dark:text-slate-50">
-                Written by{' '}
-                {article.author ? (
-                  <Link to={profilePath(article.author)} className="hover:text-brand-600 dark:hover:text-brand-300">
-                    {authorName}
-                  </Link>
-                ) : (
-                  authorName
-                )}
-              </p>
-              {/* Author bio = an E-E-A-T trust signal; falls back to a CTA. */}
-              <p className="text-xs text-slate-500 dark:text-slate-400">
-                {article.author?.bio || 'Enjoyed this read? Tap upvote or share it with a friend.'}
-              </p>
-            </div>
-            {article.author && (
-              <FollowButton handle={article.author.username || article.author.id} size="sm" className="ml-1" />
-            )}
-          </div>
-          <div className="flex items-center gap-2">
-            <VoteButtons
-              upvotes={stats.upvotes || 0}
-              downvotes={stats.downvotes || 0}
-              myVote={article.myVote || 0}
-              onVote={handleVote}
-              disabled={!user}
-              isPending={voteMut.isPending}
-            />
-            <Button size="sm" variant="outline" leftIcon={<Share2 />} onClick={handleShare}>
-              Share
-            </Button>
-          </div>
-        </div>
-
-        {/* Related */}
-        {(() => {
-          const related = (relatedFeed.data?.pages?.[0]?.data || [])
-            .filter((a) => a.id !== article.id)
-            .slice(0, 3);
-          if (related.length === 0) return null;
-          return (
-            <section className="mt-16">
-              <h2 className="font-display text-xl font-bold tracking-tight text-slate-900 dark:text-slate-50">
-                More to read
-              </h2>
-              <div className="mt-5 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
-                {related.map((a) => (
-                  <ArticleCard key={a.id} article={a} />
-                ))}
+              {/* Footer engagement */}
+              <div className="mt-14 flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-slate-200 bg-slate-50/60 p-5 dark:border-slate-800 dark:bg-slate-900/40">
+                <div className="flex items-center gap-3">
+                  {article.author ? (
+                    <Link to={profilePath(article.author)}>
+                      <Avatar user={article.author} size="md" />
+                    </Link>
+                  ) : (
+                    <Avatar user={{ name: authorName }} size="md" />
+                  )}
+                  <div>
+                    <p className="text-sm font-semibold text-slate-900 dark:text-slate-50">
+                      Written by{' '}
+                      {article.author ? (
+                        <Link to={profilePath(article.author)} className="hover:text-brand-600 dark:hover:text-brand-300">
+                          {authorName}
+                        </Link>
+                      ) : (
+                        authorName
+                      )}
+                    </p>
+                    {/* Author bio = an E-E-A-T trust signal; falls back to a CTA. */}
+                    <p className="text-xs text-slate-500 dark:text-slate-400">
+                      {article.author?.bio || 'Enjoyed this read? Tap upvote or share it with a friend.'}
+                    </p>
+                  </div>
+                  {article.author && (
+                    <FollowButton handle={article.author.username || article.author.id} size="sm" className="ml-1" />
+                  )}
+                </div>
+                <div className="flex items-center gap-2">
+                  <VoteButtons
+                    upvotes={stats.upvotes || 0}
+                    downvotes={stats.downvotes || 0}
+                    myVote={article.myVote || 0}
+                    onVote={handleVote}
+                    disabled={!user}
+                    isPending={voteMut.isPending}
+                  />
+                  <Button size="sm" variant="outline" leftIcon={<Share2 />} onClick={handleShare}>
+                    Share
+                  </Button>
+                </div>
               </div>
-            </section>
-          );
-        })()}
 
-        {/* Responses */}
-        <CommentSection articleId={article.id} count={stats.commentsCount || 0} />
-      </article>
+              {/* Related */}
+              {(() => {
+                const related = (relatedFeed.data?.pages?.[0]?.data || [])
+                  .filter((a) => a.id !== article.id)
+                  .slice(0, 3);
+                if (related.length === 0) return null;
+                return (
+                  <section className="mt-16">
+                    <h2 className="font-display text-xl font-bold tracking-tight text-slate-900 dark:text-slate-50">
+                      More to read
+                    </h2>
+                    <div className="mt-5 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+                      {related.map((a) => (
+                        <ArticleCard key={a.id} article={a} />
+                      ))}
+                    </div>
+                  </section>
+                );
+              })()}
+
+              {/* Responses */}
+              <CommentSection articleId={article.id} count={stats.commentsCount || 0} />
+            </article>
+          </div>
+
+          <ArticleSideAds />
+        </div>
+      </div>
     </div>
   );
 }
