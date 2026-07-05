@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 
 const REFRESH_INTERVAL_MS = 45 * 60 * 1000;
 
-function buildAdSrcDoc(adKey, height, width) {
+function buildAdSrcDoc(adKey, height, width, tick = 0) {
   const containerId = `container-${adKey}`;
   return `<!doctype html>
 <html lang="en">
@@ -38,7 +38,7 @@ function buildAdSrcDoc(adKey, height, width) {
         params: {},
       };
     </script>
-    <script src="https://www.highperformanceformat.com/${adKey}/invoke.js"></script>
+    <script src="https://www.highperformanceformat.com/${adKey}/invoke.js?t=${tick}"></script>
   </body>
 </html>`;
 }
@@ -54,7 +54,7 @@ function AdSlot({ adKey, height, width }) {
     return () => window.clearInterval(timerId);
   }, []);
 
-  const srcDoc = useMemo(() => buildAdSrcDoc(adKey, height, width), [adKey, height, width]);
+  const srcDoc = useMemo(() => buildAdSrcDoc(adKey, height, width, refreshTick), [adKey, height, width, refreshTick]);
 
   return (
     <iframe
@@ -71,12 +71,11 @@ function AdSlot({ adKey, height, width }) {
   );
 }
 
-export function ArticleSideAds() {
+export function ArticleSideAds({ adKey, height = 600, width = 160 }) {
   return (
     <div className="hidden self-stretch xl:block">
       <div className="sticky top-24 flex flex-col gap-6 pt-10">
-        <AdSlot adKey="066f1f55f129027cbafd0f9bb8a9f6e3" height={600} width={160} />
-        <AdSlot adKey="1bf428af68e46e36796dee21ffb31b14" height={600} width={160} />
+        <AdSlot adKey={adKey} height={height} width={width} />
       </div>
     </div>
   );
