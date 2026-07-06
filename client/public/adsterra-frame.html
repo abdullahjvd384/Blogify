@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="robots" content="noindex" />
+    <style>
+      html,
+      body {
+        margin: 0;
+        padding: 0;
+        overflow: hidden;
+        background: transparent;
+      }
+      /* Center whatever size iframe Adsterra injects inside the slot box. */
+      body {
+        display: flex;
+        align-items: flex-start;
+        justify-content: center;
+      }
+    </style>
+  </head>
+  <body>
+    <!--
+      Isolated Adsterra "iframe" banner host.
+
+      Each side-rail ad is rendered by pointing an <iframe> at this file with a
+      ?key=&w=&h= query string. Running each banner in its OWN document is what
+      makes stacking many 160x600 units reliable:
+
+        1. window.atOptions is per-document, so N banners no longer race over one
+           global (the classic "second ad overwrites the first" bug).
+        2. invoke.js uses document.write during initial parse — exactly what the
+           canonical Adsterra embed does — so it renders instead of no-op'ing.
+        3. This page is served from the SAME origin (devcrunch.tech), so Adsterra's
+           domain check passes. (A srcdoc iframe has a "null" origin and is rejected —
+           that is why the earlier srcDoc approach showed blank ads.)
+    -->
+    <script>
+      (function () {
+        var p = new URLSearchParams(window.location.search);
+        var key = p.get('key');
+        var w = parseInt(p.get('w'), 10) || 160;
+        var h = parseInt(p.get('h'), 10) || 600;
+        if (!key || !/^[a-f0-9]{16,64}$/i.test(key)) return; // guard: only valid zone ids
+        window.atOptions = { key: key, format: 'iframe', height: h, width: w, params: {} };
+        // Parser-inserted during initial parse so invoke.js's own document.write works.
+        document.write(
+          '<script src="https://www.highperformanceformat.com/' +
+            encodeURIComponent(key) +
+            '/invoke.js"><\/script>',
+        );
+      })();
+    </script>
+  </body>
+</html>
