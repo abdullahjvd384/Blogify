@@ -1,9 +1,10 @@
-import { useMemo, useState, useEffect } from 'react';
+import { Fragment, useMemo, useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Search, Filter, AlertCircle, Inbox, ArrowDown, Sparkles, Newspaper } from 'lucide-react';
 import { useArticleFeed, useForYouFeed } from '@/features/articles/hooks';
 import { useAuthStore } from '@/stores/authStore';
 import { ArticleCard } from '@/components/ArticleCard';
+import { SponsoredCard } from '@/components/SponsoredLink';
 import { ArticleCardSkeleton } from '@/components/ui/Skeleton';
 import { Input } from '@/components/ui/Input';
 import { Badge } from '@/components/ui/Badge';
@@ -210,7 +211,7 @@ export default function FeedPage() {
             <div className="flex items-start gap-3 rounded-2xl border border-red-200 bg-red-50/70 p-5 text-sm text-red-700 dark:border-red-900/60 dark:bg-red-950/40 dark:text-red-300">
               <AlertCircle size={18} className="mt-0.5 shrink-0" />
               <div>
-                <p className="font-semibold">We couldn't load the feed.</p>
+                <p className="font-semibold">We couldn&apos;t load the feed.</p>
                 <p className="opacity-80">Please check your connection and try again.</p>
               </div>
             </div>
@@ -258,8 +259,12 @@ export default function FeedPage() {
                 )}
               </p>
               <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
-                {visible.map((article) => (
-                  <ArticleCard key={article.id} article={article} />
+                {visible.map((article, i) => (
+                  <Fragment key={article.id}>
+                    <ArticleCard article={article} />
+                    {/* Sponsored card slotted into the grid so it reads natively. */}
+                    {i === Math.min(5, visible.length - 1) && <SponsoredCard />}
+                  </Fragment>
                 ))}
               </div>
 

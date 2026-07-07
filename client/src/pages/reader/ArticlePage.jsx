@@ -29,6 +29,7 @@ import { ArticleCard } from '@/components/ArticleCard';
 import { CommentSection } from '@/components/comments/CommentSection';
 import { ArticleSideAds } from '@/components/ArticleSideAds';
 import { NativeBanner } from '@/components/NativeBanner';
+import { SponsoredBanner, SponsoredCard } from '@/components/SponsoredLink';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { Skeleton } from '@/components/ui/Skeleton';
@@ -432,6 +433,9 @@ export default function ArticlePage() {
 
             {/* Body */}
             <article className="mx-auto max-w-3xl px-0 pb-20 pt-10 sm:pb-28 lg:px-0">
+              {/* Sponsored direct-link callout above the fold */}
+              <SponsoredBanner className="mb-10" />
+
               {article.contentFormat === 'html' ? (
                 <div
                   className="article-body font-serif text-[1.18rem] leading-[1.8] tracking-[-0.003em] text-slate-800 dark:text-slate-200"
@@ -507,6 +511,7 @@ export default function ArticlePage() {
                       {related.map((a) => (
                         <ArticleCard key={a.id} article={a} />
                       ))}
+                      <SponsoredCard />
                     </div>
                   </section>
                 );

@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom';
 import { Mail } from 'lucide-react';
 import { Logo } from '@/components/ui/Logo';
 import { NewsletterSignup } from '@/components/NewsletterSignup';
+import { SponsoredTextLink } from '@/components/SponsoredLink';
 
 const cols = [
   {
@@ -96,14 +97,7 @@ export function Footer() {
           </p>
           <div className="flex items-center gap-4">
             {/* Adsterra direct link (smart link) — labeled per ad-network policy. */}
-            <a
-              href="https://www.effectivecpmnetwork.com/t68dey4ded?key=e25e432c077363e2e28b5b3a0ade10ed"
-              target="_blank"
-              rel="sponsored noopener noreferrer"
-              className="text-xs text-slate-400 transition-colors hover:text-brand-600 dark:text-slate-500 dark:hover:text-brand-300"
-            >
-              Sponsored
-            </a>
+            <SponsoredTextLink className="text-xs text-slate-400 transition-colors hover:text-brand-600 dark:text-slate-500 dark:hover:text-brand-300" />
             <p className="text-xs text-slate-500 dark:text-slate-400">
               Tech that matters, written by people who ship.
             </p>
