@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { ADS_ENABLED } from '@/lib/ads';
 
 // ─── Config ───────────────────────────────────────────────────────────
 const REFRESH_MS = 45 * 1000; // re-request each visible ad every 45s
@@ -94,6 +95,7 @@ export function ArticleSideAds({ side = 'left' }) {
   const [count, setCount] = useState(1);
 
   useEffect(() => {
+    if (!ADS_ENABLED) return undefined;
     const el = wrapRef.current;
     if (!el) return undefined;
     const compute = () => {
@@ -106,6 +108,8 @@ export function ArticleSideAds({ side = 'left' }) {
     ro.observe(el);
     return () => ro.disconnect();
   }, []);
+
+  if (!ADS_ENABLED) return null;
 
   // Offset the key rotation by rail so left starts on zone A, right on zone B.
   const startIdx = side === 'right' ? 1 : 0;

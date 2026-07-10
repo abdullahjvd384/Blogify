@@ -1,5 +1,6 @@
 import { ExternalLink, Megaphone } from 'lucide-react';
 import { cn } from '@/lib/cn';
+import { ADS_ENABLED } from '@/lib/ads';
 
 // ─── Adsterra Direct Link ("Smart Link") ──────────────────────────────
 // A single monetization URL: Adsterra redirects each visitor to the best-paying
@@ -15,6 +16,7 @@ export const DIRECT_LINK =
 
 /** Small inline "Sponsored" text link — for footers, byline rows, etc. */
 export function SponsoredTextLink({ className, children = 'Sponsored' }) {
+  if (!ADS_ENABLED) return null;
   return (
     <a
       href={DIRECT_LINK}
@@ -29,6 +31,7 @@ export function SponsoredTextLink({ className, children = 'Sponsored' }) {
 
 /** Card-shaped sponsored unit that slots into an ArticleCard grid. */
 export function SponsoredCard({ className }) {
+  if (!ADS_ENABLED) return null;
   return (
     <a
       href={DIRECT_LINK}
@@ -61,6 +64,7 @@ export function SponsoredCard({ className }) {
 
 /** Wide in-article sponsored callout (full content width). */
 export function SponsoredBanner({ className }) {
+  if (!ADS_ENABLED) return null;
   return (
     <a
       href={DIRECT_LINK}
