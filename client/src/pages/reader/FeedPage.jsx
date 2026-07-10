@@ -1,10 +1,9 @@
-import { Fragment, useMemo, useState, useEffect } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Search, Filter, AlertCircle, Inbox, ArrowDown, Sparkles, Newspaper } from 'lucide-react';
 import { useArticleFeed, useForYouFeed } from '@/features/articles/hooks';
 import { useAuthStore } from '@/stores/authStore';
 import { ArticleCard } from '@/components/ArticleCard';
-import { SponsoredCard } from '@/components/SponsoredLink';
 import { ArticleCardSkeleton } from '@/components/ui/Skeleton';
 import { Input } from '@/components/ui/Input';
 import { Badge } from '@/components/ui/Badge';
@@ -259,12 +258,8 @@ export default function FeedPage() {
                 )}
               </p>
               <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
-                {visible.map((article, i) => (
-                  <Fragment key={article.id}>
-                    <ArticleCard article={article} />
-                    {/* Sponsored card slotted into the grid so it reads natively. */}
-                    {i === Math.min(5, visible.length - 1) && <SponsoredCard />}
-                  </Fragment>
+                {visible.map((article) => (
+                  <ArticleCard key={article.id} article={article} />
                 ))}
               </div>
 

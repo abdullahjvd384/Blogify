@@ -14,7 +14,6 @@ import {
 import { useAuthStore } from '@/stores/authStore';
 import { useArticleFeed } from '@/features/articles/hooks';
 import { ArticleCard } from '@/components/ArticleCard';
-import { SponsoredCard } from '@/components/SponsoredLink';
 import { ArticleCardSkeleton } from '@/components/ui/Skeleton';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
@@ -278,8 +277,6 @@ export default function HomePage() {
             {articles.map((article) => (
               <ArticleCard key={article.id} article={article} />
             ))}
-
-            {!feed.isLoading && articles.length > 0 && <SponsoredCard />}
           </div>
         </div>
       </section>

@@ -27,9 +27,6 @@ import { Avatar } from '@/components/Avatar';
 import { Seo } from '@/components/Seo';
 import { ArticleCard } from '@/components/ArticleCard';
 import { CommentSection } from '@/components/comments/CommentSection';
-import { ArticleSideAds } from '@/components/ArticleSideAds';
-import { NativeBanner } from '@/components/NativeBanner';
-import { SponsoredBanner, SponsoredCard } from '@/components/SponsoredLink';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { Skeleton } from '@/components/ui/Skeleton';
@@ -263,10 +260,8 @@ export default function ArticlePage() {
         />
       </div>
 
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div className="grid gap-8 xl:grid-cols-[160px_minmax(0,1fr)_160px] xl:items-start">
-          <ArticleSideAds side="left" />
-
+      <div className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8">
+        <div>
           <div>
             {/* Hero */}
             <header className="relative isolate overflow-hidden border-b border-slate-200 dark:border-slate-800">
@@ -433,9 +428,6 @@ export default function ArticlePage() {
 
             {/* Body */}
             <article className="mx-auto max-w-3xl px-0 pb-20 pt-10 sm:pb-28 lg:px-0">
-              {/* Sponsored direct-link callout above the fold */}
-              <SponsoredBanner className="mb-10" />
-
               {article.contentFormat === 'html' ? (
                 <div
                   className="article-body font-serif text-[1.18rem] leading-[1.8] tracking-[-0.003em] text-slate-800 dark:text-slate-200"
@@ -493,9 +485,6 @@ export default function ArticlePage() {
                 </div>
               </div>
 
-              {/* In-content native banner */}
-              <NativeBanner className="mt-12" />
-
               {/* Related */}
               {(() => {
                 const related = (relatedFeed.data?.pages?.[0]?.data || [])
@@ -511,7 +500,6 @@ export default function ArticlePage() {
                       {related.map((a) => (
                         <ArticleCard key={a.id} article={a} />
                       ))}
-                      <SponsoredCard />
                     </div>
                   </section>
                 );
@@ -521,8 +509,6 @@ export default function ArticlePage() {
               <CommentSection articleId={article.id} count={stats.commentsCount || 0} />
             </article>
           </div>
-
-          <ArticleSideAds side="right" />
         </div>
       </div>
     </div>
