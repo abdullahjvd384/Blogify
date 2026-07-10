@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useRef } from 'react';
-import { ADS_ENABLED } from '@/lib/ads';
 
 // Adsterra "Native Banner" — a responsive in-content ad. Unlike the 160x600
 // iframe banners, this one is loaded from the effectivecpmnetwork CDN and paints
@@ -35,7 +34,6 @@ export function NativeBanner({ className }) {
   }, []);
 
   useEffect(() => {
-    if (!ADS_ENABLED) return undefined;
     const el = host.current;
     load(); // initial load
     timer.current = setInterval(load, REFRESH_MS); // refresh every 45s
@@ -44,8 +42,6 @@ export function NativeBanner({ className }) {
       if (el) el.innerHTML = '';
     };
   }, [load]);
-
-  if (!ADS_ENABLED) return null;
 
   return (
     <div className={className}>
